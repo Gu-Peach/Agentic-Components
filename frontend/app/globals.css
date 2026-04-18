@@ -1,0 +1,84 @@
+@import 'tailwindcss';
+
+:root {
+  --bg-canvas: #292929;
+  --bg-shell: #2f2f2f;
+  --bg-panel: #2f2f2f;
+  --bg-panel-alt: #343434;
+  --bg-panel-soft: #3a3a3a;
+  --bg-panel-hover: #424242;
+  --bg-input: #efefef;
+  --bg-accent: #1f6f8a;
+  --bg-accent-strong: #2d88a7;
+  --bg-accent-soft: rgba(45, 136, 167, 0.18);
+  --accent-line: #58aacd;
+  --border-strong: #575757;
+  --border-soft: #434343;
+  --text-primary: #f3f3f3;
+  --text-secondary: #d2d2d2;
+  --text-muted: #9a9a9a;
+  --text-accent: #7fc1db;
+  --text-dark: #202020;
+  --success: #86d6a4;
+  --warning: #efd781;
+  --danger: #db7a7a;
+  --shadow-panel: 0 10px 24px rgba(0, 0, 0, 0.24);
+  --font-sans:
+    'Segoe UI', 'Noto Sans SC', 'Microsoft YaHei UI', 'Helvetica Neue',
+    sans-serif;
+  --font-mono:
+    'Cascadia Code', 'JetBrains Mono', 'SFMono-Regular', 'Consolas',
+    monospace;
+}
+
+@theme inline {
+  --color-background: var(--bg-canvas);
+  --color-foreground: var(--text-primary);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #252525;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(123, 192, 242, 0.25);
+  color: var(--text-primary);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+}

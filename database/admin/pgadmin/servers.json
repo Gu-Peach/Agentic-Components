@@ -1,0 +1,13 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Behavior PostgreSQL",
+      "Group": "Behavior",
+      "Host": "host.docker.internal",
+      "Port": 5432,
+      "MaintenanceDB": "behavior",
+      "Username": "behavior_user",
+      "SSLMode": "prefer"
+    }
+  }
+}

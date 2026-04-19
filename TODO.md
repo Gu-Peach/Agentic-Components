@@ -38,6 +38,31 @@
   索引：`docs/design/development_plan_llm.md` -> `3.1 布局结构`、`3.4 属性面板 Tab 结构`、`3.6 Terminal 面板`
   验收标准：左侧电子目录包含收藏树和模型预览区，右侧属性区含坐标与参数区，下方含聊天区，中间为渲染区和透明播放面板，中下方为输出面板，所有主分区支持拉伸。
 
+- `done` `FE-AUTH-011` `P0` `M1`
+  调整前端路由结构以支持认证入口，并搭建登录页骨架，为 OAuth2.0 和双 Token 机制预留页面入口。
+  索引：`docs/design/frontend/frontend_design_plan.md` -> `三、目录结构`
+  验收标准：前端设计文档包含认证相关路由，`/` 作为入口跳转到登录页，存在 `/login` 登录页骨架。
+
+- `done` `AUTH-DATA-012` `P0` `M1`
+  定义认证域数据库结构，包括用户主表、OAuth 账号映射表和刷新令牌表，为双 Token 机制提供持久化基础。
+  索引：`docs/design/database/database_construction_plan.md` -> `二、PostgreSQL 完整 Schema`
+  验收标准：仓库中存在可执行的认证 SQL 结构文件，包含 `users`、`oauth_accounts`、`refresh_tokens` 三类表及必要索引。
+
+- `done` `AUTH-OAUTH-013` `P0` `M1`
+  在前端接入基于 OAuth2.0 的登录流程，支持 Auth.js 认证入口、OAuth provider 跳转、登录态分流和工作区保护。
+  索引：`docs/design/frontend/frontend_design_plan.md` -> `三、目录结构`
+  验收标准：`/login` 可触发 OAuth 登录，`/` 能按登录态分流，未登录用户不能直接进入 `/workspace/[projectId]`。
+
+- `done` `AUTH-BE-014` `P0` `M2`
+  搭建后端认证服务骨架，提供 OAuth 登录资料换发应用双 Token、刷新 Token 和当前用户查询接口。
+  索引：`docs/design/backend/backend_design_plan.md` -> `五、API 接口设计` -> `5.1 认证`
+  验收标准：仓库中存在 `backend/` 认证服务代码，至少包含 `POST /api/auth/oauth/exchange`、`POST /api/auth/refresh`、`GET /api/auth/me` 三类接口及 JWT/Refresh Token 逻辑。
+
+- `done` `AUTH-INTEGRATE-015` `P0` `M2`
+  将前端 Auth.js 登录链路接入后端认证服务，在 OAuth 登录成功后同步用户资料并获取系统自身的 access token / refresh token。
+  索引：`docs/design/backend/backend_design_plan.md` -> `五、API 接口设计` -> `5.1 认证`，`docs/design/frontend/frontend_design_plan.md` -> `三、目录结构`
+  验收标准：前端登录成功后 Session 中包含后端签发的应用 Token，受保护页面按应用登录态分流。
+
 - `ready` `FE-VIEWPORT-005` `P0` `M1`
   实现 3D Viewport 基础：Canvas、GridFloor、OrbitControls、设备占位体、选中高亮、拖拽入场。
   索引：`docs/design/development_plan_llm.md` -> `3.3 拖拽入场实现`、`Phase 1` -> `Week 3：3D Viewport 基础`
@@ -69,3 +94,11 @@
 - 2026-04-16：完成 `FE-BOOT-001`、`FE-LAYOUT-002`、`FE-STORE-003`，进入 `FE-CATALOG-004`。
 - 2026-04-16：新增 `FE-UX-010`，重构工作区样式以贴近目标桌面布局。
 - 2026-04-16：完成 `FE-UX-010`，工作区已调整为左右中三列加中下输出区的紧凑桌面布局。
+- 2026-04-18：新增 `FE-AUTH-011`，开始搭建认证入口和登录页骨架。
+- 2026-04-18：完成 `FE-AUTH-011`，根路由已切换为认证入口并新增登录页骨架。
+- 2026-04-19：新增 `AUTH-DATA-012`、`AUTH-OAUTH-013`，开始实现用户表结构和 OAuth2.0 登录流程。
+- 2026-04-19：完成 `AUTH-DATA-012`，新增认证域 SQL 结构，包含 `users`、`oauth_accounts`、`refresh_tokens` 三张核心表。
+- 2026-04-19：完成 `AUTH-OAUTH-013`，登录页已接入 Auth.js OAuth 入口，根路由和工作区已按登录态分流与保护。
+- 2026-04-19：新增 `AUTH-BE-014`、`AUTH-INTEGRATE-015`，开始搭建后端认证服务并将前端登录链路接入系统自身双 Token。
+- 2026-04-19：完成 `AUTH-BE-014`，新增 FastAPI 认证服务骨架，支持 OAuth 资料换票、刷新 Token 和当前用户查询。
+- 2026-04-19：完成 `AUTH-INTEGRATE-015`，前端 OAuth 登录后会向后端换发系统自身双 Token，并按应用 Token 保护页面访问。

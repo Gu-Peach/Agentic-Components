@@ -389,6 +389,7 @@ celery-task-meta-{task_id}          → String (自动管理)
 ### 5.1 认证
 
 ```
+POST   /api/auth/oauth/exchange    OAuth 资料换发系统 access token / refresh token
 POST   /api/auth/register          注册
 POST   /api/auth/login             登录，返回 JWT
 POST   /api/auth/refresh           刷新 Token

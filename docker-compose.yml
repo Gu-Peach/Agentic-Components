@@ -1,8 +1,6 @@
 services:
-  # PostgreSQL - structured data (users / projects / catalog)
   postgres:
     image: postgres:16-alpine
-    container_name: behavior-postgres
     environment:
       POSTGRES_DB: behavior
       POSTGRES_USER: behavior_user
@@ -10,20 +8,17 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./data/postgres:/var/lib/postgresql/data
-      - ./database/init/postgres:/docker-entrypoint-initdb.d
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/postgresql:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U behavior_user -d behavior"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - behavior-network
+    restart: unless-stopped
 
-  # MongoDB - scene documents and flexible configs
   mongodb:
     image: mongo:7.0
-    container_name: behavior-mongodb
     environment:
       MONGO_INITDB_ROOT_USERNAME: behavior_user
       MONGO_INITDB_ROOT_PASSWORD: behavior_pass
@@ -31,37 +26,30 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - ./data/mongodb:/data/db
-      - ./database/init/mongodb:/docker-entrypoint-initdb.d
+      - mongodb_data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD", "mongosh", "--username", "behavior_user", "--password", "behavior_pass", "--authenticationDatabase", "admin", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - behavior-network
+    restart: unless-stopped
 
-  # Redis - cache and runtime state
   redis:
     image: redis:7-alpine
-    container_name: behavior-redis
     command: redis-server --appendonly yes --requirepass behavior_pass
     ports:
       - "6379:6379"
     volumes:
-      - ./data/redis:/data
+      - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "-a", "behavior_pass", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - behavior-network
+    restart: unless-stopped
 
-  # MinIO - object storage for 3D models and assets
   minio:
     image: minio/minio:latest
-    container_name: behavior-minio
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: behavior_user
@@ -70,19 +58,35 @@ services:
       - "9000:9000"
       - "9001:9001"
     volumes:
-      - ./data/minio:/data
+      - minio_data:/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - behavior-network
+    restart: unless-stopped
 
-  # pgAdmin - PostgreSQL web UI
+  backend:
+    build:
+      context: ./backend
+    env_file:
+      - ./backend/.env
+    environment:
+      POSTGRES_DSN: postgresql+asyncpg://behavior_user:behavior_pass@postgres:5432/behavior
+      CORS_ORIGINS: '["http://localhost:3000"]'
+      DB_AUTO_CREATE: "true"
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
   pgadmin:
     image: dpage/pgadmin4:latest
-    container_name: behavior-pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@behavior.dev
       PGADMIN_DEFAULT_PASSWORD: behavior_pass
@@ -90,52 +94,16 @@ services:
     ports:
       - "5050:80"
     volumes:
-      - ./data/pgadmin:/var/lib/pgadmin
+      - pgadmin_data:/var/lib/pgadmin
       - ./database/admin/pgadmin/servers.json:/pgadmin4/servers.json:ro
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     depends_on:
       postgres:
         condition: service_healthy
-    networks:
-      - behavior-network
+    restart: unless-stopped
 
-  # Mongo Express - MongoDB web UI
-  mongo-express:
-    image: mongo-express:latest
-    container_name: behavior-mongo-express
-    environment:
-      ME_CONFIG_MONGODB_URL: mongodb://behavior_user:behavior_pass@host.docker.internal:27017/?authSource=admin
-      ME_CONFIG_BASICAUTH_USERNAME: admin
-      ME_CONFIG_BASICAUTH_PASSWORD: behavior_pass
-    ports:
-      - "8081:8081"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    depends_on:
-      mongodb:
-        condition: service_healthy
-    networks:
-      - behavior-network
-
-  # Redis Commander - Redis web UI
-  redis-commander:
-    image: rediscommander/redis-commander:latest
-    container_name: behavior-redis-commander
-    environment:
-      REDIS_HOSTS: behavior-redis:host.docker.internal:6379:0:behavior_pass
-      HTTP_USER: admin
-      HTTP_PASSWORD: behavior_pass
-    ports:
-      - "8082:8081"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    depends_on:
-      redis:
-        condition: service_healthy
-    networks:
-      - behavior-network
-
-networks:
-  behavior-network:
-    driver: bridge
+volumes:
+  postgres_data:
+  pgadmin_data:
+  mongodb_data:
+  redis_data:
+  minio_data:

@@ -1,0 +1,13 @@
+
+> frontend@0.1.0 dev E:\project\Agentic Components\frontend
+> next dev
+
+▲ Next.js 16.2.4 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://169.254.212.113:3000
+- Environments: .env.local
+✓ Ready in 500ms
+Creating turbopack project { dir: 'E:\\project\\Agentic Components\\frontend', testMode: true }
+
+ GET / 307 in 416ms (next.js: 218ms, application-code: 197ms)
+ GET /login 200 in 91ms (next.js: 25ms, application-code: 66ms)

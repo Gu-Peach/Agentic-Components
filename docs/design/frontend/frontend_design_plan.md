@@ -93,7 +93,15 @@ npm install ansi-to-html
 frontend/
 ├── app/
 │   ├── layout.tsx                    # 根布局
-│   ├── page.tsx                      # 重定向到 /workspace
+│   ├── page.tsx                      # 根入口：根据登录态跳转到 /login 或 /projects
+│   ├── login/
+│   │   └── page.tsx                  # 登录页
+│   ├── api/
+│   │   └── auth/
+│   │       └── [...nextauth]/
+│   │           └── route.ts          # Auth.js OAuth 入口与回调
+│   ├── projects/
+│   │   └── page.tsx                  # 项目列表页
 │   └── workspace/
 │       └── [projectId]/
 │           └── page.tsx              # 主工作区页面
@@ -155,11 +163,23 @@ frontend/
 │   ├── useGLTFLoader.ts              # 按需加载 GLTF 模型
 │   └── useDragToScene.ts             # 拖拽入场逻辑
 │
+├── lib/
+│   ├── auth.ts                       # Auth.js 配置、JWT Session 策略
+│   └── auth-providers.ts             # OAuth provider 开关与展示配置
+│
 └── types/
     ├── scene.ts                      # DeviceInstance / Transform / Connection
     ├── catalog.ts                    # CatalogItem / Category
-    └── agent.ts                      # Message / StreamChunk
+    ├── agent.ts                      # Message / StreamChunk
+    └── next-auth.d.ts                # Session / JWT 类型扩展
 ```
+
+> 路由职责约定：
+> - `/`：认证入口与路由分流页
+> - `/login`：本地登录 / OAuth 入口
+> - `/api/auth/[...nextauth]`：Auth.js OAuth 发起、回调和会话接口
+> - `/projects`：项目列表与最近项目入口
+> - `/workspace/[projectId]`：具体项目工作区
 
 ---
 

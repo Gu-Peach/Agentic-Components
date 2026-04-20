@@ -2,6 +2,40 @@
 
 ## 阶段目标
 
+- 当前阶段：Phase 1 - 通义千问流式聊天接入（M1）
+- 阶段周期：2026-04-20，1 天
+- 阶段目标：将右下角聊天区从本地 mock SSE 切换为服务端代理通义千问 DashScope OpenAI 兼容流式接口。
+- 验收标准：
+  - `frontend/.env.local` 配置 `DASHSCOPE_API_KEY` 后可收到通义千问真实流式响应。
+  - 浏览器端继续使用 `fetch`、`ReadableStream` 和现有 SSE parser 读取数据。
+  - Assistant 消息继续使用 `requestAnimationFrame` 打字机效果显示。
+  - 未配置 API key 时聊天区返回明确配置提示，`pnpm run lint` 通过。
+
+## 当前阶段任务清单
+
+- `done` `FE-CHAT-016` `P1` `M1`
+  接入通义千问 API：服务端 `/api/chat` 使用 DashScope OpenAI 兼容接口代理流式响应，浏览器端保持 SSE + ReadableStream + RAF 打字机链路。
+  Acceptance Criteria: 配置 `DASHSCOPE_API_KEY` 后聊天区能收到通义千问真实流式响应，未配置时返回明确提示，lint 通过。
+
+## 阶段目标
+
+- 当前阶段：Phase 1 - AI 聊天 Demo 流式输出（M1）
+- 阶段周期：2026-04-20，1 天
+- 阶段目标：在右下角大模型聊天区域实现本地 demo，对齐后续真实 agent 接入方式，先完成 fetch + ReadableStream 读取 SSE 文本流与 requestAnimationFrame 打字机渲染。
+- 验收标准：
+  - 聊天输入可发送用户消息，并触发本地 SSE demo 接口。
+  - 前端通过 `fetch` 获取响应，并使用 `ReadableStream` reader 增量解析 `data:` SSE 数据。
+  - Assistant 消息使用基于 `requestAnimationFrame` 的打字机效果逐字显示。
+  - `pnpm run lint` 通过，相关文件不超过仓库行数限制。
+
+## 当前阶段任务清单
+
+- `done` `FE-CHAT-007` `P1` `M1`
+  实现 AI 聊天区 demo 流式输出与打字机效果：Next.js 本地 SSE route、前端 SSE parser、requestAnimationFrame typewriter hook、聊天输入交互。
+  Acceptance Criteria: 输入消息后右下角聊天区能显示用户消息，assistant 响应由 SSE 增量返回并通过 RAF 打字机效果显示，lint 通过。
+
+## 阶段目标
+
 - 当前阶段：Phase 1 - 前端面板构建（M1）
 - 阶段周期：Week 1 - Week 5
 - 阶段目标：不依赖任何后端，用 Mock 数据完成全部前端 UI 组件，并形成可完整演示的工作区。

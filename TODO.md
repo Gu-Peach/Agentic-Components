@@ -2,6 +2,22 @@
 
 ## 阶段目标
 
+- 当前阶段：Phase 1 - 项目 README 重构（M1）
+- 阶段周期：2026-04-20，1 天
+- 阶段目标：重写根目录 README，清晰说明项目最终目标、与 Visual Components 的对标关系、旧版 agent 动画引擎的继承价值，以及当前项目的开发状态。
+- 验收标准：
+  - README 包含项目定位、目标能力、当前进度、系统构成和路线图。
+  - README 嵌入 `docs/assets/VC.png`、`docs/assets/curr.png`、`docs/assets/old.png` 三张对比图。
+  - README 明确说明旧项目已具备 agent 驱动动画引擎，本项目是在其基础上重建新一代 agent 平台。
+
+## 当前阶段任务清单
+
+- `done` `DOC-README-017` `P1` `M1`
+  重写根目录 README，补充产品愿景、平台对标关系、三张截图说明、当前能力边界与后续演进方向。
+  Acceptance Criteria: 根 README 可作为项目首页说明文档，图文完整，叙事清晰，能让新成员快速理解项目目标与当前状态。
+
+## 阶段目标
+
 - 当前阶段：Phase 1 - 通义千问流式聊天接入（M1）
 - 阶段周期：2026-04-20，1 天
 - 阶段目标：将右下角聊天区从本地 mock SSE 切换为服务端代理通义千问 DashScope OpenAI 兼容流式接口。

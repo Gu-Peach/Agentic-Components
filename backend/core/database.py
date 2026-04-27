@@ -3,7 +3,7 @@ from collections.abc import AsyncGenerator
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from config import get_settings
-from models.pg import oauth_account, refresh_token, user  # noqa: F401
+from models.pg import user  # noqa: F401
 from models.pg.base import Base
 
 settings = get_settings()

@@ -1,22 +1,4 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: behavior
-      POSTGRES_USER: behavior_user
-      POSTGRES_PASSWORD: behavior_pass
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./database/postgresql:/docker-entrypoint-initdb.d:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U behavior_user -d behavior"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
   mongodb:
     image: mongo:7.0
     environment:
@@ -48,31 +30,12 @@ services:
       retries: 5
     restart: unless-stopped
 
-  minio:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: behavior_user
-      MINIO_ROOT_PASSWORD: behavior_pass
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    volumes:
-      - minio_data:/data
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
   backend:
     build:
       context: ./backend
     env_file:
       - ./backend/.env
     environment:
-      POSTGRES_DSN: postgresql+asyncpg://behavior_user:behavior_pass@postgres:5432/behavior
       CORS_ORIGINS: '["http://localhost:3000"]'
       DB_AUTO_CREATE: "true"
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
@@ -80,30 +43,8 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/app
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: unless-stopped
-
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@behavior.dev
-      PGADMIN_DEFAULT_PASSWORD: behavior_pass
-      PGADMIN_CONFIG_SERVER_MODE: "False"
-    ports:
-      - "5050:80"
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-      - ./database/admin/pgadmin/servers.json:/pgadmin4/servers.json:ro
-    depends_on:
-      postgres:
-        condition: service_healthy
     restart: unless-stopped
 
 volumes:
-  postgres_data:
-  pgadmin_data:
   mongodb_data:
   redis_data:
-  minio_data:

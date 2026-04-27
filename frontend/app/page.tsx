@@ -1,11 +1,10 @@
 import { redirect } from 'next/navigation';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getSupabaseAuthState } from '@/lib/supabase/auth';
 
 export default async function HomePage() {
-  const session = await getServerSession(authOptions);
+  const { session } = await getSupabaseAuthState();
 
-  if (!session?.appAccessToken) {
+  if (!session) {
     redirect('/login');
   }
 

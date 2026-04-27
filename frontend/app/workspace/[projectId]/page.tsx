@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
-import { getServerSession } from 'next-auth';
 import { WorkspaceLayout } from '@/components/layout/WorkspaceLayout';
-import { authOptions } from '@/lib/auth';
+import { getSupabaseAuthState } from '@/lib/supabase/auth';
 
 type WorkspacePageProps = {
   params: Promise<{
@@ -10,9 +9,9 @@ type WorkspacePageProps = {
 };
 
 export default async function WorkspacePage({ params }: WorkspacePageProps) {
-  const session = await getServerSession(authOptions);
+  const { session } = await getSupabaseAuthState();
 
-  if (!session?.appAccessToken) {
+  if (!session) {
     redirect('/login');
   }
 

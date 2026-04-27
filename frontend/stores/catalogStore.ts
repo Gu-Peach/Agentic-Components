@@ -1,13 +1,28 @@
 'use client';
 
 import { create } from 'zustand';
-import type { CatalogCollection, CatalogDevice } from '@/types/catalog';
+import { fetchPublicCatalog } from '@/lib/supabase/storageCatalog';
+import type {
+  CatalogCategory,
+  CatalogCollection,
+  CatalogDevice,
+  CatalogSection,
+} from '@/types/catalog';
 
 type CatalogState = {
   collections: CatalogCollection[];
+  categories: CatalogCategory[];
   devices: CatalogDevice[];
   query: string;
+  activeSection: CatalogSection;
+  activeCategory: string | null;
+  isLoading: boolean;
+  hasLoaded: boolean;
+  error: string | null;
   setQuery: (query: string) => void;
+  setActiveSection: (section: CatalogSection) => void;
+  setActiveCategory: (category: string | null) => void;
+  loadPublicCatalog: () => Promise<void>;
 };
 
 const collections: CatalogCollection[] = [
@@ -18,24 +33,48 @@ const collections: CatalogCollection[] = [
   { id: 'recent', label: '最近模型' },
 ];
 
-const devices: CatalogDevice[] = [
-  { id: 'arc-welding-1', name: 'Arc Welding and Testing BiW', deviceType: 'robot' },
-  { id: 'arc-welding-2', name: 'Arc Welding Cell with Gantry', deviceType: 'robot' },
-  { id: 'arc-welding-3', name: 'Arc Welding Cell with Multirobot', deviceType: 'robot' },
-  { id: 'arc-welding-4', name: 'Arc Welding Cell with Track', deviceType: 'robot' },
-  { id: 'water-cooler', name: 'Arc Welding Water Cooler', deviceType: 'storage' },
-  { id: 'wire-drum', name: 'Arc Welding Wire Drum', deviceType: 'storage' },
-  { id: 'wire-feeder', name: 'Arc Welding Wire Feeder', deviceType: 'storage' },
-  { id: 'arc-mate-120ic', name: 'arcMate_120iC', deviceType: 'robot' },
-  { id: 'arc-mate-120id', name: 'arcMate_120iD', deviceType: 'robot' },
-  { id: 'smart-conveyor', name: 'Smart Conveyor Assembly', deviceType: 'conveyor' },
-  { id: 'lift-shuttle', name: 'Lift Shuttle Station', deviceType: 'lift' },
-  { id: 'storage-rack', name: 'Storage Rack A1-A8', deviceType: 'storage' },
-];
-
-export const useCatalogStore = create<CatalogState>((set) => ({
+export const useCatalogStore = create<CatalogState>((set, get) => ({
   collections,
-  devices,
+  categories: [],
+  devices: [],
   query: '',
+  activeSection: 'all',
+  activeCategory: null,
+  isLoading: false,
+  hasLoaded: false,
+  error: null,
   setQuery: (query) => set({ query }),
+  setActiveSection: (activeSection) =>
+    set({
+      activeSection,
+      activeCategory: activeSection === 'components' ? get().activeCategory : null,
+    }),
+  setActiveCategory: (activeCategory) =>
+    set({
+      activeSection: activeCategory ? 'components' : get().activeSection,
+      activeCategory,
+    }),
+  loadPublicCatalog: async () => {
+    if (get().isLoading) {
+      return;
+    }
+
+    set({ isLoading: true, error: null });
+
+    try {
+      const { devices, categories } = await fetchPublicCatalog();
+      set({
+        devices,
+        categories,
+        hasLoaded: true,
+        isLoading: false,
+      });
+    } catch (error) {
+      set({
+        isLoading: false,
+        hasLoaded: true,
+        error: error instanceof Error ? error.message : '模型目录加载失败',
+      });
+    }
+  },
 }));

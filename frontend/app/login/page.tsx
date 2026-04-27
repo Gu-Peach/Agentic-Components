@@ -1,17 +1,22 @@
 import { redirect } from 'next/navigation';
-import { getServerSession } from 'next-auth';
 import { OAuthLoginButtons } from '@/components/auth/OAuthLoginButtons';
-import {
-  authOptions,
-  hasBackendOAuthEnabled,
-  hasOAuthProviderEnabled,
-  oauthProviders,
-} from '@/lib/auth';
+import { oauthProviderConfigs } from '@/lib/auth-providers';
+import { getSupabaseAuthState } from '@/lib/supabase/auth';
+
+const oauthProviders = oauthProviderConfigs.map((provider) => ({
+  ...provider,
+  enabled: Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  ),
+}));
+
+const hasOAuthProviderEnabled = oauthProviders.some((provider) => provider.enabled);
 
 export default async function LoginPage() {
-  const session = await getServerSession(authOptions);
+  const { session } = await getSupabaseAuthState();
 
-  if (session?.appAccessToken) {
+  if (session) {
     redirect('/projects');
   }
 
@@ -23,10 +28,10 @@ export default async function LoginPage() {
             Agentic Components
           </p>
           <h1 className='mt-4 max-w-md text-3xl font-semibold leading-tight text-[var(--text-primary)]'>
-            OAuth 2.0 登录入口
+            Supabase Auth 登录入口
           </h1>
           <p className='mt-4 max-w-lg text-sm leading-7 text-[var(--text-secondary)]'>
-            当前页面会先完成 Auth.js OAuth 登录，再由后端认证服务同步写入 `users`、`oauth_accounts` 和 `refresh_tokens`，并签发系统自己的双 Token。
+            当前页面将通过 Supabase Auth 发起 OAuth 登录，并由 Supabase 维护用户会话、身份提供商映射与访问令牌生命周期。
           </p>
 
           <div className='mt-10 grid gap-4 sm:grid-cols-3'>
@@ -35,23 +40,23 @@ export default async function LoginPage() {
                 Users
               </p>
               <p className='mt-2 text-xs leading-6 text-[var(--text-muted)]'>
-                保存系统主体用户资料与登录状态。
+                保存 Supabase 认证用户资料与基础身份信息。
               </p>
             </div>
             <div className='border border-[var(--border-strong)] bg-[rgba(0,0,0,0.14)] p-4'>
               <p className='text-sm font-medium text-[var(--text-primary)]'>
-                OAuth Accounts
+                OAuth Identity
               </p>
               <p className='mt-2 text-xs leading-6 text-[var(--text-muted)]'>
-                映射第三方 provider 身份与账号信息。
+                由 Supabase 托管 GitHub、Google 等身份提供商映射。
               </p>
             </div>
             <div className='border border-[var(--border-strong)] bg-[rgba(0,0,0,0.14)] p-4'>
               <p className='text-sm font-medium text-[var(--text-primary)]'>
-                Refresh Tokens
+                Session Lifecycle
               </p>
               <p className='mt-2 text-xs leading-6 text-[var(--text-muted)]'>
-                支撑双 Token 刷新与多端会话撤销。
+                由 Supabase 管理 access token、refresh token 与多端会话。
               </p>
             </div>
           </div>
@@ -63,7 +68,7 @@ export default async function LoginPage() {
               登录工作区
             </h2>
             <p className='mt-2 text-sm text-[var(--text-muted)]'>
-              当前优先提供 OAuth 入口，账号密码登录会在后端认证完成后再接入。
+              当前默认提供 OAuth 登录，后续如果需要邮箱登录或邀请码登录，也会统一走 Supabase Auth。
             </p>
 
             <div className='mt-8 rounded border border-[var(--border-strong)] bg-[rgba(0,0,0,0.12)] p-4 text-sm text-[var(--text-secondary)]'>
@@ -71,7 +76,7 @@ export default async function LoginPage() {
                 环境变量提示
               </p>
               <p className='mt-2 leading-7 text-[var(--text-muted)]'>
-                请先在 `frontend/.env.local` 中配置 `NEXTAUTH_SECRET`、OAuth provider 凭据、`BACKEND_API_URL` 和 `AUTH_BRIDGE_SECRET`。
+                请先在 `frontend/.env.local` 中配置 `NEXT_PUBLIC_SUPABASE_URL`、`NEXT_PUBLIC_SUPABASE_ANON_KEY`，并在 Supabase 控制台启用 GitHub 或 Google Provider。
               </p>
             </div>
 
@@ -85,17 +90,7 @@ export default async function LoginPage() {
 
             {!hasOAuthProviderEnabled ? (
               <p className='mt-4 text-xs leading-6 text-[var(--warning)]'>
-                当前没有启用的 OAuth provider，按钮会保持禁用状态。
-              </p>
-            ) : null}
-            {!hasBackendOAuthEnabled ? (
-              <p className='mt-4 text-xs leading-6 text-[var(--warning)]'>
-                后端认证桥接尚未配置，OAuth 完成后无法换发系统自己的 access token。
-              </p>
-            ) : null}
-            {session?.authError ? (
-              <p className='mt-4 text-xs leading-6 text-[var(--warning)]'>
-                最近一次认证没有完成后端换票：{session.authError}
+                当前未检测到 Supabase Auth 前端配置，按钮会保持禁用状态。
               </p>
             ) : null}
           </div>

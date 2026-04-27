@@ -2,12 +2,18 @@
 
 import { produce } from 'immer';
 import { create } from 'zustand';
+import type { CatalogDevice } from '@/types/catalog';
 import type { SceneDevice } from '@/types/scene';
 
 type SceneState = {
   devices: SceneDevice[];
   selectedDeviceId: string;
+  sceneLabel: string;
+  sceneSource: 'mock' | 'component' | 'layout';
+  isSceneLoading: boolean;
+  loadError: string | null;
   selectDevice: (deviceId: string) => void;
+  loadCatalogItem: (device: CatalogDevice) => Promise<void>;
 };
 
 const mockDevices: SceneDevice[] = [
@@ -16,8 +22,9 @@ const mockDevices: SceneDevice[] = [
     name: 'ARC-2000i #1',
     type: 'robot',
     catalogId: 'arc-mate-120ic',
+    source: 'mock',
     transform: {
-      position: [1388.122, -866.361, 688.441],
+      position: [-4, 0, 0],
       rotation: [0, 0, 0],
       scale: [1, 1, 1],
     },
@@ -27,43 +34,69 @@ const mockDevices: SceneDevice[] = [
     name: 'ARC-2000i #2',
     type: 'robot',
     catalogId: 'arc-mate-120id',
+    source: 'mock',
     transform: {
-      position: [1400.221, -866.361, 709.991],
-      rotation: [0, 0, -90],
-      scale: [1, 1, 1],
-    },
-  },
-  {
-    id: 'conveyor-01',
-    name: 'Conveyor Feed 01',
-    type: 'conveyor',
-    catalogId: 'smart-conveyor',
-    transform: {
-      position: [320, 0, 120],
+      position: [4, 0, 0],
       rotation: [0, 0, 0],
-      scale: [1, 1, 1],
-    },
-  },
-  {
-    id: 'lift-01',
-    name: 'Lift Shuttle 01',
-    type: 'lift',
-    catalogId: 'lift-shuttle',
-    transform: {
-      position: [640, 0, 180],
-      rotation: [0, 90, 0],
       scale: [1, 1, 1],
     },
   },
 ];
 
+const initialSelectedId = mockDevices[0]?.id ?? '';
+
+function createSceneFromCatalogItem(
+  device: CatalogDevice,
+  index = 0,
+): SceneDevice[] {
+  return [
+    {
+      id: `${device.id}-instance-${index}`,
+      name: device.name,
+      type: device.deviceType,
+      catalogId: device.id,
+      modelUrl: device.modelUrl,
+      source: device.kind,
+      transform: {
+        position: [0, 0, 0],
+        rotation: [0, 0, 0],
+        scale: [1, 1, 1],
+      },
+    },
+  ];
+}
+
 export const useSceneStore = create<SceneState>((set) => ({
   devices: mockDevices,
-  selectedDeviceId: mockDevices[1].id,
+  selectedDeviceId: initialSelectedId,
+  sceneLabel: '焊接单元',
+  sceneSource: 'mock',
+  isSceneLoading: false,
+  loadError: null,
   selectDevice: (deviceId) =>
     set((state) =>
       produce(state, (draft) => {
         draft.selectedDeviceId = deviceId;
       }),
     ),
+  loadCatalogItem: async (device) => {
+    set({ isSceneLoading: true, loadError: null });
+
+    try {
+      const nextDevices = createSceneFromCatalogItem(device);
+
+      set({
+        devices: nextDevices,
+        selectedDeviceId: nextDevices[0]?.id ?? '',
+        sceneLabel: device.name,
+        sceneSource: device.kind,
+        isSceneLoading: false,
+      });
+    } catch (error) {
+      set({
+        isSceneLoading: false,
+        loadError: error instanceof Error ? error.message : '场景加载失败',
+      });
+    }
+  },
 }));

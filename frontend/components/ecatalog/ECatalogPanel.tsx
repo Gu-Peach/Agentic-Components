@@ -1,29 +1,12 @@
 'use client';
 
+import { useEffect } from 'react';
 import { Group, Panel, Separator } from 'react-resizable-panels';
-import {
-  ChevronDown,
-  ChevronRight,
-  Folder,
-  Grid2x2,
-  LayoutGrid,
-  List,
-  Plus,
-  Search,
-  Star,
-} from 'lucide-react';
+import { Grid2x2, LayoutGrid, List, Plus, Search } from 'lucide-react';
+import { CatalogGrid } from '@/components/ecatalog/catalogGrid';
+import { CatalogTree } from '@/components/ecatalog/catalogTree';
 import { useCatalogStore } from '@/stores/catalogStore';
-
-const treeItems = [
-  { label: '所有模型', depth: 0, open: true, icon: Star },
-  { label: '公共模型', depth: 1, open: true, icon: Folder },
-  { label: 'Components', depth: 2, open: false, icon: Folder },
-  { label: 'Layouts', depth: 2, open: false, icon: Folder },
-  { label: '我的模型', depth: 1, open: false, icon: Folder },
-  { label: '当前打开', depth: 1, open: false, icon: Folder },
-  { label: '最近模型', depth: 1, open: false, icon: Folder },
-  { label: '最常使用的', depth: 1, open: false, icon: Folder },
-];
+import { useSceneStore } from '@/stores/sceneStore';
 
 function InnerResizeHandle() {
   return (
@@ -32,10 +15,40 @@ function InnerResizeHandle() {
 }
 
 export function ECatalogPanel() {
-  const { collections, devices, query, setQuery } = useCatalogStore();
-  const filteredDevices = devices.filter((device) =>
-    device.name.toLowerCase().includes(query.toLowerCase()),
-  );
+  const {
+    collections,
+    categories,
+    devices,
+    query,
+    activeSection,
+    activeCategory,
+    isLoading,
+    hasLoaded,
+    error,
+    setQuery,
+    setActiveSection,
+    setActiveCategory,
+    loadPublicCatalog,
+  } = useCatalogStore();
+  const { loadCatalogItem, isSceneLoading } = useSceneStore();
+
+  useEffect(() => {
+    if (!hasLoaded) {
+      void loadPublicCatalog();
+    }
+  }, [hasLoaded, loadPublicCatalog]);
+
+  const filteredDevices = devices.filter((device) => {
+    const matchesQuery = device.name.toLowerCase().includes(query.toLowerCase());
+    const matchesSection =
+      activeSection === 'all' ? true : device.section === activeSection;
+    const matchesCategory =
+      activeCategory && activeSection === 'components'
+        ? device.category === activeCategory
+        : true;
+
+    return matchesQuery && matchesSection && matchesCategory;
+  });
 
   return (
     <aside className='flex h-full flex-col bg-[var(--bg-panel)]'>
@@ -54,27 +67,14 @@ export function ECatalogPanel() {
               </button>
             </div>
             <div className='flex-1 overflow-auto px-2 py-3'>
-              <div className='mb-4 space-y-1'>
-                {treeItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={`${item.label}-${item.depth}`}
-                      className='flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm text-[var(--text-secondary)] transition hover:bg-[var(--bg-panel-hover)]'
-                      style={{ paddingLeft: `${item.depth * 14 + 8}px` }}
-                      type='button'
-                    >
-                      {item.open ? (
-                        <ChevronDown size={12} className='text-[var(--text-muted)]' />
-                      ) : (
-                        <ChevronRight size={12} className='text-[var(--text-muted)]' />
-                      )}
-                      <Icon size={14} className='text-[var(--text-secondary)]' />
-                      <span>{item.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
+              <CatalogTree
+                activeCategory={activeCategory}
+                activeSection={activeSection}
+                categories={categories}
+                devices={devices}
+                onSelectCategory={setActiveCategory}
+                onSelectSection={setActiveSection}
+              />
               <div className='border-t border-[var(--border-soft)] pt-3'>
                 {collections.map((collection) => (
                   <div
@@ -112,36 +112,19 @@ export function ECatalogPanel() {
               ))}
             </div>
             <div className='flex-1 overflow-auto px-3 py-3'>
-              <div className='grid grid-cols-2 gap-3'>
-                {filteredDevices.map((device, index) => (
-                  <button
-                    key={device.id}
-                    className='group flex flex-col text-left'
-                    draggable
-                    type='button'
-                  >
-                    <div className='flex h-24 items-end justify-start border border-[var(--border-strong)] bg-[linear-gradient(180deg,#808080,#5d5d5d)] p-2 transition group-hover:border-[var(--accent-line)]'>
-                      <div className='flex w-full items-end justify-between'>
-                        <div className='h-12 w-10 bg-[#e5c221]' />
-                        <div className='h-8 w-14 bg-[#c8c8c8]' />
-                        <div className='h-16 w-5 bg-[#8ad2ef]' />
-                      </div>
-                    </div>
-                    <span className='mt-2 line-clamp-2 text-sm leading-5 text-[var(--text-secondary)]'>
-                      {device.name}
-                    </span>
-                    <span className='text-xs uppercase tracking-wide text-[var(--text-muted)]'>
-                      {device.deviceType} · {index + 1}
-                    </span>
-                  </button>
-                ))}
-              </div>
+              <CatalogGrid
+                devices={filteredDevices}
+                error={error}
+                isLoading={isLoading}
+                isSceneLoading={isSceneLoading}
+                onSelect={(device) => void loadCatalogItem(device)}
+              />
             </div>
             <div className='flex items-center justify-between border-t border-[var(--border-soft)] px-3 py-2 text-xs text-[var(--text-muted)]'>
               <div className='flex items-center gap-4'>
                 <span>组件</span>
                 <span>布局</span>
-                <span>文件</span>
+                <span>{isSceneLoading ? '加载中' : '已连接 Supabase'}</span>
               </div>
               <span>{filteredDevices.length} 项目</span>
             </div>

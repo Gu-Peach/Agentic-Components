@@ -1,17 +1,35 @@
 'use client';
 
+import { useMemo } from 'react';
+import { Canvas } from '@react-three/fiber';
+import { ViewportScene } from '@/components/viewport/ViewportScene';
 import { useSceneStore } from '@/stores/sceneStore';
 
-const sceneBadges = ['焊接单元', '双机器人', 'Mock 渲染'];
+const sourceLabels = {
+  mock: 'Mock 渲染',
+  component: 'Component',
+  layout: 'Layout',
+} as const;
 
 export function Viewport3D() {
-  const { devices, selectedDeviceId, selectDevice } = useSceneStore();
+  const {
+    devices,
+    selectedDeviceId,
+    sceneLabel,
+    sceneSource,
+    isSceneLoading,
+    loadError,
+    selectDevice,
+  } = useSceneStore();
+
+  const sceneBadges = useMemo(
+    () => [sceneLabel, `${devices.length} 个设备`, sourceLabels[sceneSource]],
+    [devices.length, sceneLabel, sceneSource],
+  );
 
   return (
     <section className='relative h-full overflow-hidden bg-[#d5d2cb]'>
-      <div className='absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.08)_1px,transparent_1px)] bg-[size:60px_60px] opacity-60' />
-      <div className='absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,transparent_48%,rgba(0,0,0,0.08)_100%)]' />
-      <div className='absolute left-6 top-6 flex gap-2'>
+      <div className='absolute left-6 top-6 z-10 flex gap-2'>
         {sceneBadges.map((badge) => (
           <span
             key={badge}
@@ -22,30 +40,21 @@ export function Viewport3D() {
         ))}
       </div>
 
-      <div className='absolute inset-x-[12%] top-[14%] bottom-[10%] border border-[rgba(0,0,0,0.12)] bg-[linear-gradient(180deg,#6f6f6f,#555)] shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]'>
-        <div className='absolute inset-x-0 bottom-0 h-3 bg-[repeating-linear-gradient(90deg,#eab308_0_40px,#1b1b1b_40px_80px)]' />
-        <div className='absolute left-[16%] top-[34%] h-28 w-20 bg-[#5a5a5a] shadow-lg' />
-        <button
-          className='absolute left-[30%] top-[18%] h-40 w-10 origin-bottom -rotate-12 bg-[#a8efff] shadow-[0_0_0_3px_rgba(123,192,242,0.45)]'
-          onClick={() => selectDevice('robot-left')}
-          type='button'
-        />
-        <button
-          className='absolute right-[25%] top-[18%] h-40 w-10 origin-bottom rotate-12 bg-[#ffffff] shadow-[0_0_0_3px_rgba(123,192,242,0.45)]'
-          onClick={() => selectDevice('robot-right')}
-          type='button'
-        />
-        <button
-          className='absolute bottom-[12%] left-[24%] h-8 w-[50%] bg-[#979797]'
-          onClick={() => selectDevice('conveyor-01')}
-          type='button'
-        />
-        <button
-          className='absolute left-[48%] top-[26%] h-32 w-16 bg-[#d8af1d]'
-          onClick={() => selectDevice('lift-01')}
-          type='button'
-        />
-      </div>
+      {loadError ? (
+        <div className='absolute left-6 top-16 z-10 rounded border border-[rgba(0,0,0,0.12)] bg-[rgba(255,255,255,0.78)] px-3 py-2 text-xs text-[#444]'>
+          {loadError}
+        </div>
+      ) : null}
+
+      <Canvas camera={{ position: [8, 6, 10], fov: 45 }}>
+        <ViewportScene />
+      </Canvas>
+
+      {isSceneLoading ? (
+        <div className='absolute inset-0 flex items-center justify-center bg-[rgba(40,40,40,0.22)] text-sm text-white'>
+          正在加载模型场景...
+        </div>
+      ) : null}
 
       <div className='absolute bottom-6 left-6 grid h-28 w-28 grid-cols-3 grid-rows-3 overflow-hidden border border-[rgba(0,0,0,0.18)] bg-[rgba(255,255,255,0.72)] text-lg font-semibold text-[#7b7b7b]'>
         <div />
@@ -59,7 +68,7 @@ export function Viewport3D() {
         <div />
       </div>
 
-      <div className='absolute right-6 bottom-6 flex flex-col gap-2'>
+      <div className='absolute right-6 bottom-6 z-10 flex flex-col gap-2'>
         {devices.map((device) => (
           <button
             key={device.id}

@@ -1,12 +1,11 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { getSupabaseAuthState } from '@/lib/supabase/auth';
 
 export default async function ProjectsPage() {
-  const session = await getServerSession(authOptions);
+  const { session, user } = await getSupabaseAuthState();
 
-  if (!session?.appAccessToken) {
+  if (!session || !user) {
     redirect('/login');
   }
 
@@ -17,10 +16,10 @@ export default async function ProjectsPage() {
           Projects
         </p>
         <h1 className='mt-4 text-3xl font-semibold text-[var(--text-primary)]'>
-          欢迎回来，{session.user?.name ?? '用户'}
+          欢迎回来，{user.user_metadata.full_name ?? user.email ?? '用户'}
         </h1>
         <p className='mt-3 text-sm leading-7 text-[var(--text-secondary)]'>
-          OAuth 登录已经生效。当前页面作为登录后的落点页，后续可以在这里接入最近项目列表、团队项目和权限过滤。
+          Supabase Auth 登录已经生效。当前页面作为登录后的落点页，后续可以在这里接入最近项目、团队项目和权限过滤。
         </p>
 
         <div className='mt-8 grid gap-4 sm:grid-cols-2'>
@@ -29,26 +28,26 @@ export default async function ProjectsPage() {
               当前 Provider
             </p>
             <p className='mt-2 text-xs text-[var(--text-muted)]'>
-              {session.provider ?? 'unknown'}
+              {user.app_metadata.provider ?? 'unknown'}
             </p>
           </div>
           <div className='border border-[var(--border-strong)] bg-[rgba(0,0,0,0.14)] p-4'>
             <p className='text-sm font-medium text-[var(--text-primary)]'>
-              应用用户 ID
+              Supabase 用户 ID
             </p>
             <p className='mt-2 break-all text-xs text-[var(--text-muted)]'>
-              {session.user.id}
+              {user.id}
             </p>
           </div>
         </div>
 
         <div className='mt-4 border border-[var(--border-strong)] bg-[rgba(0,0,0,0.14)] p-4'>
           <p className='text-sm font-medium text-[var(--text-primary)]'>
-            App Access Token 过期时间
+            Access Token 过期时间
           </p>
           <p className='mt-2 text-xs text-[var(--text-muted)]'>
-            {session.appAccessTokenExpiresAt
-              ? new Date(session.appAccessTokenExpiresAt).toLocaleString('zh-CN')
+            {session.expires_at
+              ? new Date(session.expires_at * 1000).toLocaleString('zh-CN')
               : 'unknown'}
           </p>
         </div>

@@ -1,5 +1,7 @@
 export type DeviceType = 'conveyor' | 'robot' | 'lift' | 'storage';
 
+export type SceneSource = 'component' | 'layout' | 'mock';
+
 export type TransformTuple = [number, number, number];
 
 export type DeviceTransform = {
@@ -13,5 +15,7 @@ export type SceneDevice = {
   name: string;
   type: DeviceType;
   catalogId: string;
+  modelUrl?: string;
+  source: SceneSource;
   transform: DeviceTransform;
 };

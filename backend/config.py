@@ -24,10 +24,12 @@ class Settings(BaseSettings):
 
     jwt_secret: str = "replace-with-a-long-random-secret"
     jwt_algorithm: str = "HS256"
-    access_token_ttl_minutes: int = 15
-    refresh_token_ttl_days: int = 14
 
     auth_bridge_secret: str = "replace-with-a-shared-bridge-secret"
+    supabase_url: str | None = None
+    supabase_service_role_key: str | None = None
+    supabase_jwt_secret: str | None = None
+    supabase_storage_bucket: str = "agentic-components"
 
     @field_validator("cors_origins", mode="before")
     @classmethod

@@ -2,6 +2,172 @@
 
 ## 阶段目标
 
+- 当前阶段：Phase 1 - 前端公共模型接入（M2）
+- 阶段周期：2026-04-27，1 天
+- 阶段目标：将工作区左侧收藏面板中的“公共模型”接入本地 Supabase Storage，按 `Components` 与 `Layouts` 两类展示，并支持点击模型后在中间场景区域加载对应模型。
+- 验收标准：
+  - 前端可从 Supabase 公共桶读取模型列表与基础元数据
+  - 收藏面板中的“公共模型”可分组展示 `Components` 与 `Layouts`
+  - 点击模型卡片后，中间场景会切换或加载对应模型
+  - `pnpm run lint` 通过
+
+## 当前阶段任务清单
+
+- `done` `FE-VIEWPORT-FIT-030` `P0` `M2`
+  为 R3F 视口增加模型包围盒居中、自动缩放与相机自适应能力，提升不同 `.glb` 模型的默认可视体验。
+  Acceptance Criteria: 点击不同公共模型时，模型会自动居中并缩放到合适尺寸；相机视角能覆盖主要模型范围；`pnpm run lint` 通过。
+- `done` `FE-R3F-VIEWPORT-029` `P0` `M2`
+  将中间场景区从 mock 2D 占位图升级为基于 Three.js + React Three Fiber 的真实 3D 视口，并支持从 Supabase `modles` 桶加载 `.glb` 模型。
+  Acceptance Criteria: 前端依赖包含 `three`、`@react-three/fiber`、`@react-three/drei`；点击公共模型后中间区域能显示真实 3D 模型；`pnpm run lint` 通过。
+- `done` `FE-SUPABASE-PROXY-028` `P0` `M2`
+  为公共模型目录增加前端服务端代理读取能力，修复匿名 key 无法列出 Storage 对象的问题，并支持 `Components` 多层目录展开。
+  Acceptance Criteria: 前端通过服务端接口可读取 `modles/Layouts` 和 `modles/Components/*`；收藏树可展示 `Components` 的子分类与模型数量；`pnpm run lint` 通过。
+- `done` `FE-SUPABASE-CATALOG-027` `P0` `M2`
+  接入 Supabase 公共模型目录与场景加载链路，完成收藏树分类、模型列表渲染和点击加载到场景的前端实现。
+  Acceptance Criteria: 收藏面板可展示来自 Supabase 的 `Components` 与 `Layouts` 模型；点击任一模型后场景区与当前选中状态同步更新；前端 lint 通过。
+
+## 阶段目标
+
+- 当前阶段：Phase 1 - 本地 Supabase 部署（M2）
+- 阶段周期：2026-04-23，1 天
+- 阶段目标：在本机通过 Supabase CLI 和 Docker 启动本地 Supabase stack，并补齐项目所需的本地 schema、环境变量与启动说明。
+- 验收标准：
+  - 仓库存在 `supabase/` 本地配置目录
+  - 本地 Supabase stack 可通过 CLI 启动
+  - 本地数据库包含后端所需的 `users` 表结构
+  - 前后端 `.env.example` 或说明文档包含本地 Supabase 默认地址与密钥使用方式
+
+## 当前阶段任务清单
+
+- `done` `AUTH-CALLBACK-026` `P0` `M2`
+  补齐 Supabase OAuth 回调 route，将 provider 返回的 code 交换为 Supabase session cookie 后再跳转业务页面。
+  Acceptance Criteria: GitHub/Google OAuth 返回后不再回到登录页，服务端页面可读取 Supabase session。
+
+- `done` `INFRA-SUPABASE-LOCAL-025` `P0` `M2`
+  使用 Supabase CLI 初始化并启动本地 Supabase，补齐本地迁移与环境配置说明。
+  Acceptance Criteria: `supabase start` 可启动本地服务，项目可按本地 Supabase 地址配置前后端。
+
+## 阶段目标
+
+- 当前阶段：Phase 1 - 后端认证死代码清理（M2）
+- 阶段周期：2026-04-21，1 天
+- 阶段目标：移除后端自建 OAuth exchange、refresh token 与桥接认证遗留实现，完成 Supabase 鉴权单轨收口。
+- 验收标准：
+  - `/api/auth` 仅保留 Supabase 鉴权所需的默认接口
+  - `oauth_accounts`、`refresh_tokens` 相关模型和服务代码不再参与默认后端启动链路
+  - 后端配置与 README 不再把自签 token 体系作为默认方案
+  - Python 语法检查通过
+
+## 当前阶段任务清单
+
+- `done` `AUTH-DEADCODE-024` `P0` `M2`
+  删除后端旧认证接口、自签 token 服务与关联模型引用，保留 Supabase token -> 本地 users 同步的单一路径。
+  Acceptance Criteria: 后端默认代码路径中不再保留 exchange/refresh 认证实现，静态检查通过。
+
+## 阶段目标
+
+- 当前阶段：Phase 1 - 认证遗留清理（M2）
+- 阶段周期：2026-04-21，1 天
+- 阶段目标：移除前端默认路径中的 NextAuth 与自建 token exchange 遗留实现，统一仓库认证叙事到 Supabase Auth。
+- 验收标准：
+  - `frontend` 不再依赖 `next-auth`
+  - NextAuth API route、类型扩展与旧认证辅助文件从默认工程中移除
+  - 前后端文档与模板不再把 `AUTH_BRIDGE_SECRET`、`BACKEND_API_URL` 作为默认认证入口
+  - 前端 lint 通过
+
+## 当前阶段任务清单
+
+- `done` `AUTH-CLEANUP-023` `P0` `M2`
+  清理 NextAuth 与旧桥接认证遗留文件、依赖和说明文案，完成 Supabase Auth 单轨收口。
+  Acceptance Criteria: 前端依赖和源码默认路径中不再保留 NextAuth 链路，相关文档与模板完成同步更新。
+
+## 阶段目标
+
+- 当前阶段：Phase 1 - Supabase 后端鉴权迁移（M2）
+- 阶段周期：2026-04-21，1 天
+- 阶段目标：将后端默认鉴权入口从自签 access token 校验切换为 Supabase access token 校验，并在访问受保护接口时自动同步本地用户资料。
+- 验收标准：
+  - `GET /api/auth/me` 默认接受 Supabase access token
+  - 后端可基于 Supabase JWT 解析当前用户并同步到本地 `users` 表
+  - `backend/.env.example` 与配置对象包含后端 Supabase JWT 校验所需变量
+  - 后端静态校验通过，旧 bridge/token exchange 链路明确降级为过渡实现
+
+## 当前阶段任务清单
+
+- `done` `AUTH-SUPABASE-BE-022` `P0` `M2`
+  改造后端鉴权依赖与用户同步逻辑，使受保护接口默认基于 Supabase access token 工作，并为后续移除自建 token 体系做收口。
+  Acceptance Criteria: 后端依赖、配置与 `/api/auth/me` 鉴权链路完成 Supabase 化，旧实现仅保留兼容用途。
+
+## 阶段目标
+
+- 当前阶段：Phase 1 - Supabase Auth 迁移（M2）
+- 阶段周期：2026-04-21，1 天
+- 阶段目标：将前端登录、会话读取、路由保护与后端鉴权入口从 NextAuth + 自建 token exchange 迁移到 Supabase Auth 主导模式。
+- 验收标准：
+  - 前端登录入口和路由保护不再依赖 `next-auth` 的 `appAccessToken`
+  - 前端环境变量与认证说明以 Supabase Auth 为默认路径
+  - 后端为后续校验 Supabase access token 预留明确配置入口
+  - 现有自建 auth 链路不再作为默认推荐实现
+
+## 当前阶段任务清单
+
+- `done` `AUTH-SUPABASE-021` `P0` `M2`
+  重构前端认证入口、会话读取与登录说明，切换到 Supabase Auth 作为默认登录态来源，并为后端 Supabase JWT 校验改造铺路。
+  Acceptance Criteria: 登录页、首页、项目页、工作区页面的鉴权判断完成 Supabase 化，环境模板与文案同步更新。
+
+## 阶段目标
+
+- 当前阶段：Phase 1 - Supabase 基础设施迁移（M2）
+- 阶段周期：2026-04-21，1 天
+- 阶段目标：将当前本地部署中的 PostgreSQL 与 MinIO 接入统一切换为 Supabase，完成数据库连接、对象存储配置、部署说明与环境变量模板收敛。
+- 验收标准：
+  - `docker-compose.yml` 不再依赖本地 `postgres`、`minio`、`pgadmin` 服务即可启动核心开发链路。
+  - 后端数据库配置可通过 Supabase PostgreSQL 连接串直连。
+  - 前后端环境变量模板补充 Supabase 所需配置，并移除本地 MinIO/PostgreSQL 的误导性默认说明。
+  - 项目文档明确 Supabase 的数据库与 Storage 使用方式、启动方式与迁移注意事项。
+
+## 当前阶段任务清单
+
+- `done` `INFRA-SUPABASE-020` `P0` `M2`
+  梳理并替换本地 PostgreSQL / MinIO 部署依赖，统一收敛到 Supabase 的 PostgreSQL 与 Storage 配置入口。
+  Acceptance Criteria: 部署配置、环境变量模板与说明文档完成 Supabase 化，仓库内不再要求本地 postgres/minio/pgadmin 作为默认依赖。
+
+## 阶段目标
+
+- 当前阶段：Phase 1 - AI 层架构文档补充（M1）
+- 阶段周期：2026-04-20，1 天
+- 阶段目标：补充一份独立的 AI 层架构设计文档，聚焦 Agent 调度、Skill 集成、SimPlan 协议边界以及与仿真执行层的协作方式。
+- 验收标准：
+  - 新增一份中文 AI 架构文档，独立于主设计稿维护。
+  - 文档包含 AI 层分层说明、Agent Scheduler 设计、Skill 组织方式和至少一张框架图。
+  - 文档写清从用户请求到 SimPlan 生成、再到执行层落地的完整流程。
+  - 文档明确 AI 服务与 Skill 服务、仿真服务之间的通信职责与协议建议。
+
+## 当前阶段任务清单
+
+- `done` `DOC-AI-019` `P1` `M1`
+  编写 AI 层架构与 Agent 调度设计文档，整理 Agent Scheduler、Skill Registry、SimPlan 协议、执行协作流程与框架图。
+  Acceptance Criteria: 新文档可作为 AI 层专题设计说明，便于后续拆分 Agent 服务、Skill 服务与执行服务。
+
+## 阶段目标
+
+- 当前阶段：Phase 1 - 微服务架构文档补充（M1）
+- 阶段周期：2026-04-20，1 天
+- 阶段目标：基于 `docs/` 中现有设计内容，整理项目的微服务架构图、服务间协作流程以及通信方式/协议说明。
+- 验收标准：
+  - 新增一份中文架构文档，明确微服务边界与职责。
+  - 文档包含至少一张可直接阅读的文字架构图。
+  - 文档写清前端、网关、认证、场景、目录、Agent、仿真、文件、消息/缓存、数据库之间的协作流程。
+  - 文档明确 REST、SSE、WebSocket、Redis Pub/Sub、Celery、数据库访问等协议与通信方式。
+
+## 当前阶段任务清单
+
+- `done` `DOC-ARCH-018` `P1` `M1`
+  编写微服务架构与协作流程文档，整合前端、后端、AI、数据库设计中的服务边界、交互链路和通信协议。
+  Acceptance Criteria: 新文档可作为项目微服务架构总览，便于后续服务拆分、接口设计和部署规划。
+
+## 阶段目标
+
 - 当前阶段：Phase 1 - 项目 README 重构（M1）
 - 阶段周期：2026-04-20，1 天
 - 阶段目标：重写根目录 README，清晰说明项目最终目标、与 Visual Components 的对标关系、旧版 agent 动画引擎的继承价值，以及当前项目的开发状态。
@@ -140,6 +306,17 @@
 
 ## 进度记录
 
+- 2026-04-27：完成 `FE-VIEWPORT-FIT-030`，R3F 视口已支持 GLB 包围盒居中、统一缩放与基础相机自适应，对不同尺寸模型的默认观感更稳定，`corepack pnpm run lint` 通过。
+- 2026-04-27：完成 `FE-R3F-VIEWPORT-029`，前端已接入 `three`、`@react-three/fiber`、`@react-three/drei`，公共模型目录项返回 `modelUrl` 并可在中间视口加载真实 `.glb` 模型，`corepack pnpm run lint` 通过。
+- 2026-04-27：完成 `FE-SUPABASE-PROXY-028`，新增前端服务端目录代理接口以读取 `modles` 桶，修复匿名 key 无法列出 Storage 对象的问题，并支持 `Components` 多层目录分类展示，`corepack pnpm run lint` 通过。
+- 2026-04-27：完成 `FE-SUPABASE-CATALOG-027`，前端收藏面板已接入 Supabase Storage 公共模型目录，支持按 `Components` / `Layouts` 分组展示并点击加载到场景，`corepack pnpm run lint` 通过。
+- 2026-04-23：完成 `AUTH-CALLBACK-026`，新增 Supabase OAuth callback route，将 provider 返回的 `code` 交换为 session cookie 后再跳转 `/projects`，前端 lint 通过。
+- 2026-04-23：完成 `INFRA-SUPABASE-LOCAL-025`，本地 Supabase CLI + Docker stack 已启动，新增 `supabase/` 配置、`users` 表 migration、本地环境变量模板与 `docs/local_supabase.md`。
+- 2026-04-21：完成 `AUTH-DEADCODE-024`，后端已移除旧 exchange/refresh 认证链路与关联模型引用，Python 语法检查通过。
+- 2026-04-21：完成 `AUTH-CLEANUP-023`，前端默认工程已移除 NextAuth 与旧桥接认证遗留文件和依赖，`pnpm lint` 通过。
+- 2026-04-21：完成 `AUTH-SUPABASE-BE-022`，后端默认鉴权入口已支持 Supabase access token 并在访问受保护接口时同步本地 `users`，Python 语法检查通过。
+- 2026-04-21：完成 `AUTH-SUPABASE-021`，前端登录入口、服务器端会话读取与受保护页面默认切换到 Supabase Auth，`pnpm lint` 已通过。
+- 2026-04-21：完成 `INFRA-SUPABASE-020`，默认部署说明已切换为 Supabase PostgreSQL + Supabase Storage，本地 docker-compose 不再默认依赖 postgres/minio/pgadmin。
 - 2026-04-16：创建 Phase 1 执行清单，开始 `FE-BOOT-001`。
 - 2026-04-16：完成 `FE-BOOT-001`、`FE-LAYOUT-002`、`FE-STORE-003`，进入 `FE-CATALOG-004`。
 - 2026-04-16：新增 `FE-UX-010`，重构工作区样式以贴近目标桌面布局。

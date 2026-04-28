@@ -13,57 +13,37 @@ type SceneState = {
   isSceneLoading: boolean;
   loadError: string | null;
   selectDevice: (deviceId: string) => void;
+  updateDeviceTransform: (
+    deviceId: string,
+    transform: SceneDevice['transform'],
+  ) => void;
   loadCatalogItem: (device: CatalogDevice) => Promise<void>;
 };
 
-const mockDevices: SceneDevice[] = [
-  {
-    id: 'robot-left',
-    name: 'ARC-2000i #1',
-    type: 'robot',
-    catalogId: 'arc-mate-120ic',
-    source: 'mock',
-    transform: {
-      position: [-4, 0, 0],
-      rotation: [0, 0, 0],
-      scale: [1, 1, 1],
-    },
-  },
-  {
-    id: 'robot-right',
-    name: 'ARC-2000i #2',
-    type: 'robot',
-    catalogId: 'arc-mate-120id',
-    source: 'mock',
-    transform: {
-      position: [4, 0, 0],
-      rotation: [0, 0, 0],
-      scale: [1, 1, 1],
-    },
-  },
-];
+const mockDevices: SceneDevice[] = [];
 
 const initialSelectedId = mockDevices[0]?.id ?? '';
 
 function createSceneFromCatalogItem(
   device: CatalogDevice,
   index = 0,
-): SceneDevice[] {
-  return [
-    {
-      id: `${device.id}-instance-${index}`,
-      name: device.name,
-      type: device.deviceType,
-      catalogId: device.id,
-      modelUrl: device.modelUrl,
-      source: device.kind,
-      transform: {
-        position: [0, 0, 0],
-        rotation: [0, 0, 0],
-        scale: [1, 1, 1],
-      },
+): SceneDevice {
+  const column = index % 4;
+  const row = Math.floor(index / 4);
+
+  return {
+    id: `${device.id}-instance-${index}`,
+    name: `${device.name} ${index + 1}`,
+    type: device.deviceType,
+    catalogId: device.id,
+    modelUrl: device.modelUrl,
+    source: device.kind,
+    transform: {
+      position: [column * 8, 0, row * 8],
+      rotation: [0, 0, 0],
+      scale: [1, 1, 1],
     },
-  ];
+  };
 }
 
 export const useSceneStore = create<SceneState>((set) => ({
@@ -79,19 +59,33 @@ export const useSceneStore = create<SceneState>((set) => ({
         draft.selectedDeviceId = deviceId;
       }),
     ),
+  updateDeviceTransform: (deviceId, transform) =>
+    set((state) =>
+      produce(state, (draft) => {
+        const device = draft.devices.find((item) => item.id === deviceId);
+
+        if (!device) {
+          return;
+        }
+
+        device.transform = transform;
+      }),
+    ),
   loadCatalogItem: async (device) => {
     set({ isSceneLoading: true, loadError: null });
 
     try {
-      const nextDevices = createSceneFromCatalogItem(device);
+      const nextIndex = useSceneStore.getState().devices.length;
+      const nextDevice = createSceneFromCatalogItem(device, nextIndex);
 
-      set({
-        devices: nextDevices,
-        selectedDeviceId: nextDevices[0]?.id ?? '',
-        sceneLabel: device.name,
+      set((state) => ({
+        devices: [...state.devices, nextDevice],
+        selectedDeviceId: nextDevice.id,
+        sceneLabel:
+          state.devices.length === 0 ? device.name : `${state.devices.length + 1} Models`,
         sceneSource: device.kind,
         isSceneLoading: false,
-      });
+      }));
     } catch (error) {
       set({
         isSceneLoading: false,

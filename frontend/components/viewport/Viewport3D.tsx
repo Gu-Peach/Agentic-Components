@@ -1,12 +1,13 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
+import { SceneToolbar } from '@/components/viewport/SceneToolbar';
 import { ViewportScene } from '@/components/viewport/ViewportScene';
 import { useSceneStore } from '@/stores/sceneStore';
 
 const sourceLabels = {
-  mock: 'Mock 渲染',
+  mock: 'Mock',
   component: 'Component',
   layout: 'Layout',
 } as const;
@@ -21,9 +22,11 @@ export function Viewport3D() {
     loadError,
     selectDevice,
   } = useSceneStore();
+  const [transformMode, setTransformMode] =
+    useState<'translate' | 'rotate' | 'scale'>('translate');
 
   const sceneBadges = useMemo(
-    () => [sceneLabel, `${devices.length} 个设备`, sourceLabels[sceneSource]],
+    () => [sceneLabel, `${devices.length} Models`, sourceLabels[sceneSource]],
     [devices.length, sceneLabel, sceneSource],
   );
 
@@ -46,13 +49,15 @@ export function Viewport3D() {
         </div>
       ) : null}
 
+      <SceneToolbar mode={transformMode} onChange={setTransformMode} />
+
       <Canvas camera={{ position: [8, 6, 10], fov: 45 }}>
-        <ViewportScene />
+        <ViewportScene transformMode={transformMode} />
       </Canvas>
 
       {isSceneLoading ? (
         <div className='absolute inset-0 flex items-center justify-center bg-[rgba(40,40,40,0.22)] text-sm text-white'>
-          正在加载模型场景...
+          Loading models...
         </div>
       ) : null}
 

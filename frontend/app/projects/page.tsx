@@ -1,8 +1,13 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { getDefaultWorkspacePath, isAuthBypassedForDev } from '@/lib/authMode';
 import { getSupabaseAuthState } from '@/lib/supabase/auth';
 
 export default async function ProjectsPage() {
+  if (isAuthBypassedForDev()) {
+    redirect(getDefaultWorkspacePath());
+  }
+
   const { session, user } = await getSupabaseAuthState();
 
   if (!session || !user) {
@@ -55,7 +60,7 @@ export default async function ProjectsPage() {
         <div className='mt-8 flex flex-wrap gap-3'>
           <Link
             className='flex h-11 items-center justify-center bg-[var(--bg-accent)] px-5 text-sm font-medium text-white transition hover:bg-[var(--bg-accent-strong)]'
-            href='/workspace/demo-factory'
+            href={getDefaultWorkspacePath()}
           >
             打开默认工作区
           </Link>

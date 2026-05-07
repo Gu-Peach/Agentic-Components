@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { OAuthLoginButtons } from '@/components/auth/OAuthLoginButtons';
 import { oauthProviderConfigs } from '@/lib/auth-providers';
+import { getDefaultWorkspacePath, isAuthBypassedForDev } from '@/lib/authMode';
 import { getSupabaseAuthState } from '@/lib/supabase/auth';
 
 const oauthProviders = oauthProviderConfigs.map((provider) => ({
@@ -14,6 +15,10 @@ const oauthProviders = oauthProviderConfigs.map((provider) => ({
 const hasOAuthProviderEnabled = oauthProviders.some((provider) => provider.enabled);
 
 export default async function LoginPage() {
+  if (isAuthBypassedForDev()) {
+    redirect(getDefaultWorkspacePath());
+  }
+
   const { session } = await getSupabaseAuthState();
 
   if (session) {

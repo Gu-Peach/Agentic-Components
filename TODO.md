@@ -2,6 +2,31 @@
 
 ## 阶段目标
 
+- 当前阶段：Phase 1 - VC 接口模板铺设（M2）
+- 阶段周期：2026-05-07，1 天
+- 阶段目标：为 Conveyor / Robot / Workpiece 建立贴近 Visual Components 语义的内置接口模板，区分物理连接与字段传递连接，为后续场景装配、工件流转与抓取对齐机制打基础。
+- 验收标准：
+  - `assets/Conveyor`、`assets/Robot`、`assets/Workpiece` 均存在接口模板
+  - 模板覆盖 conveyor 入口/出口、robot 抓取点、workpiece 顶/底接口
+  - 模板预留字段传递通道，能够表达 Flow / ToolExport / 支撑与抓取参考系
+  - `pnpm run lint` 通过，或明确记录阻塞原因
+
+## 当前阶段任务清单
+
+- `done` `FE-VC-INTERFACE-053` `P0` `M2`
+  为 Conveyor / Robot / Workpiece 补充 VC 风格内置接口模板，区分物理连接接口与字段传递接口，并将模板收纳到各资产类别的 `interfaces/` 子目录中，为后续接口机制实现做准备。
+  Acceptance Criteria: `assets/Conveyor`、`assets/Robot`、`assets/Workpiece` 下均存在接口模板文件；模板覆盖 conveyor 入口/出口、robot 抓取点、workpiece 顶/底接口；模板预留字段传递通道；`pnpm run lint` 通过或记录原因。
+
+- `done` `FE-AUTH-BYPASS-052` `P0` `M2`
+  临时关闭前端登录入口与工作区登录守卫，在保留现有 Supabase 认证代码的前提下，让本地开发可直接进入场景工作区，优先支持场景功能联调。
+  Acceptance Criteria: `/`、`/login`、`/projects` 可在开发模式下直达默认工作区；`/workspace/[projectId]` 不再因未登录重定向；认证实现文件保留未删除；`pnpm run lint` 通过或记录原因。
+
+- `done` `FE-LOCAL-MODEL-051` `P0` `M2`
+  将公共模型目录接口改为扫描 `frontend/public/modles` 本地资源，并兼容当前 `frontend/public/models` 目录，保持 catalog 数据结构与模型加载方式不变。
+  Acceptance Criteria: 本地目录扫描可产出与当前接口兼容的 `devices/categories`；components 与 layouts 均可列出；现有前端调用方无需改动即可继续加载模型；`pnpm run lint` 通过或记录原因。
+
+## 阶段目标
+
 - 当前阶段：Phase 1 - Agent 澄清追问回归修复（M2）
 - 阶段周期：2026-05-07，1 天
 - 阶段目标：修复“把物料放到仓位”仍默认进入 A1 执行计划的问题，确保未指定仓位时不会被调度 fallback 自动补默认目标。

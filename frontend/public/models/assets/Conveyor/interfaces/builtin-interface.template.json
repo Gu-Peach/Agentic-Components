@@ -1,0 +1,61 @@
+{
+  "templateVersion": 1,
+  "deviceType": "conveyor",
+  "description": "传送带内置接口模板。包含物理入口/出口，以及与 VC Flow 类似的字段传递通道。",
+  "interfaces": [
+    {
+      "id": "entry",
+      "name": "入口",
+      "kind": "physical",
+      "role": "transport_entry",
+      "direction": "in",
+      "anchor": {
+        "reference": "key_point",
+        "keyPointName": "entry",
+        "nodeName": "",
+        "offset": { "x": 0, "y": 0, "z": 0 }
+      },
+      "compatibleRoles": ["transport_exit", "support_bottom"],
+      "fieldBindings": [
+        { "channel": "flow", "mode": "consume", "field": "workpiece" }
+      ]
+    },
+    {
+      "id": "exit",
+      "name": "出口",
+      "kind": "physical",
+      "role": "transport_exit",
+      "direction": "out",
+      "anchor": {
+        "reference": "key_point",
+        "keyPointName": "exit",
+        "nodeName": "",
+        "offset": { "x": 0, "y": 0, "z": 0 }
+      },
+      "compatibleRoles": ["transport_entry", "grasp_top", "support_bottom"],
+      "fieldBindings": [
+        { "channel": "flow", "mode": "publish", "field": "workpiece" }
+      ]
+    }
+  ],
+  "fieldInterfaces": [
+    {
+      "id": "flow",
+      "name": "Flow",
+      "kind": "field",
+      "description": "沿传送带方向传递工件内容，可用于首尾对接时的内容流转。",
+      "fields": [
+        { "name": "workpiece", "type": "entity_ref", "required": false },
+        { "name": "occupied", "type": "boolean", "required": true },
+        { "name": "direction", "type": "string", "required": true }
+      ],
+      "route": {
+        "fromInterface": "entry",
+        "toInterface": "exit"
+      }
+    }
+  ],
+  "legacyMappings": {
+    "keyPoints": ["entry", "exit"]
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "templateVersion": 1,
+  "deviceType": "workpiece",
+  "description": "工件内置接口模板。底部用于运行/支撑对齐，顶部用于机械臂抓取对齐。",
+  "interfaces": [
+    {
+      "id": "bottom",
+      "name": "底部接口",
+      "kind": "physical",
+      "role": "support_bottom",
+      "direction": "bidirectional",
+      "anchor": {
+        "reference": "key_point",
+        "keyPointName": "bottom",
+        "nodeName": "",
+        "offset": { "x": 0, "y": 0, "z": 0 }
+      },
+      "compatibleRoles": ["transport_entry", "transport_exit"],
+      "fieldBindings": [
+        { "channel": "support_frame", "mode": "publish", "field": "bottom_frame" }
+      ]
+    },
+    {
+      "id": "top",
+      "name": "顶部接口",
+      "kind": "physical",
+      "role": "grasp_top",
+      "direction": "bidirectional",
+      "anchor": {
+        "reference": "key_point",
+        "keyPointName": "top",
+        "nodeName": "",
+        "offset": { "x": 0, "y": 0, "z": 0 }
+      },
+      "compatibleRoles": ["grasp_top"],
+      "fieldBindings": [
+        { "channel": "grasp_frame", "mode": "publish", "field": "top_frame" }
+      ]
+    }
+  ],
+  "fieldInterfaces": [
+    {
+      "id": "support_frame",
+      "name": "SupportFrame",
+      "kind": "field",
+      "description": "用于传送、落料、支撑对齐时读取工件底部参考系。",
+      "fields": [
+        { "name": "bottom_frame", "type": "transform", "required": true }
+      ]
+    },
+    {
+      "id": "grasp_frame",
+      "name": "GraspFrame",
+      "kind": "field",
+      "description": "用于抓取、搬运、放置时读取工件顶部参考系。",
+      "fields": [
+        { "name": "top_frame", "type": "transform", "required": true }
+      ]
+    }
+  ],
+  "legacyMappings": {
+    "keyPoints": ["bottom", "top"]
+  }
+}

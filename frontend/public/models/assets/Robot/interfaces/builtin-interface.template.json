@@ -1,0 +1,50 @@
+{
+  "templateVersion": 1,
+  "deviceType": "robot",
+  "description": "机器人内置接口模板。当前先以末端抓取点作为唯一物理接口，并预留 TCP/ToolExport 字段接口。",
+  "interfaces": [
+    {
+      "id": "grasp",
+      "name": "抓取点",
+      "kind": "physical",
+      "role": "grasp_top",
+      "direction": "bidirectional",
+      "anchor": {
+        "reference": "urdf_end_effector",
+        "endEffectorNodeName": "",
+        "fallbackJointName": "joint_6",
+        "offset": { "x": 0, "y": 0, "z": 0 }
+      },
+      "compatibleRoles": ["support_top", "transport_exit"],
+      "fieldBindings": [
+        { "channel": "tool_export", "mode": "publish", "field": "tcp_frame" },
+        { "channel": "grasp_state", "mode": "publish", "field": "attached_workpiece" }
+      ]
+    }
+  ],
+  "fieldInterfaces": [
+    {
+      "id": "tool_export",
+      "name": "ToolExport",
+      "kind": "field",
+      "description": "将 TCP 位姿导出给规划器、夹具或外部控制逻辑。",
+      "fields": [
+        { "name": "tcp_frame", "type": "transform", "required": true },
+        { "name": "tool_name", "type": "string", "required": false }
+      ]
+    },
+    {
+      "id": "grasp_state",
+      "name": "GraspState",
+      "kind": "field",
+      "description": "表达机器人当前抓取状态与被附着的工件引用。",
+      "fields": [
+        { "name": "attached_workpiece", "type": "entity_ref", "required": false },
+        { "name": "is_holding", "type": "boolean", "required": true }
+      ]
+    }
+  ],
+  "legacyMappings": {
+    "urdfEndEffector": "last_joint_or_endEffectorNodeName"
+  }
+}

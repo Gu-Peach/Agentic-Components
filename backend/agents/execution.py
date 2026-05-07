@@ -1,15 +1,15 @@
 from typing import Any
 
 from agents.models import AgentState, Position
-from agents.qwen import QwenAgentClient
-from agents.trajectory import (
+from agents.motion.selection import resolve_keypoint, robot_pick, robot_place
+from agents.motion.trajectory import (
     conveyor_waypoints,
     default_position,
     estimate_duration,
-    get_keypoint,
     robot_waypoints,
     smart_storage_waypoints,
 )
+from agents.qwen import QwenAgentClient
 
 
 class ExecutionAgent:
@@ -23,8 +23,15 @@ class ExecutionAgent:
         segments: list[dict[str, Any]] = []
         by_action: dict[str, dict[str, Any]] = {}
 
-        for action in state.schedule_plan.get('actions', []):
-            segment = self._segment_for_action(action, state.device_configs)
+        actions = state.schedule_plan.get('actions', [])
+        for index, action in enumerate(actions):
+            segment = self._segment_for_action(
+                action,
+                state.device_configs,
+                actions,
+                index,
+                segments[-1] if segments else None,
+            )
             planned_start = self._planned_start(action, by_action)
             duration = segment['estimated_duration']
             segment['planned_start'] = planned_start
@@ -57,11 +64,21 @@ class ExecutionAgent:
         self,
         action: dict[str, Any],
         configs: dict[str, dict[str, Any]],
+        actions: list[dict[str, Any]],
+        index: int,
+        previous_segment: dict[str, Any] | None,
     ) -> dict[str, Any]:
         device_id = action['device_id']
         config = configs[device_id]
         device_type = config.get('type', 'manual')
-        waypoints, motion_data = self._waypoints(action, config, configs)
+        waypoints, motion_data = self._waypoints(
+            action,
+            config,
+            configs,
+            actions,
+            index,
+            previous_segment,
+        )
         duration = estimate_duration(waypoints, config)
 
         segment = {
@@ -83,13 +100,16 @@ class ExecutionAgent:
         action: dict[str, Any],
         config: dict[str, Any],
         configs: dict[str, dict[str, Any]],
+        actions: list[dict[str, Any]],
+        index: int,
+        previous_segment: dict[str, Any] | None,
     ) -> tuple[list[Position], dict[str, Any] | None]:
         device_type = config.get('type')
         if device_type == 'conveyor':
             return conveyor_waypoints(config), None
         if device_type == 'robot_arm':
-            pick = self._position(configs, action.get('source'), 'exit')
-            place = self._position(configs, action.get('target'), 'entry')
+            pick = robot_pick(action, configs, previous_segment)
+            place = robot_place(action, configs, actions, index, pick)
             lift = float((config.get('trajectoryConfig') or {}).get('liftHeight', 0.3))
             return robot_waypoints(pick, place, lift), None
         if device_type == 'smart_storage':
@@ -104,7 +124,7 @@ class ExecutionAgent:
     ) -> tuple[list[Position], dict[str, Any] | None]:
         if action.get('action') == 'deliver_to_next':
             current = default_position(config)
-            target = self._position(configs, action.get('target'), 'entry')
+            target = resolve_keypoint(configs, action.get('target'), 'entry')
             return [current, target], None
 
         params = action.get('params') or {}
@@ -117,16 +137,6 @@ class ExecutionAgent:
             storage_config,
             params.get('targetCellId', 'A1'),
         )
-
-    def _position(
-        self,
-        configs: dict[str, dict[str, Any]],
-        device_id: str | None,
-        keypoint: str,
-    ) -> Position:
-        if not device_id or device_id not in configs:
-            return {'x': 0.0, 'y': 0.0, 'z': 0.0}
-        return get_keypoint(configs[device_id], keypoint) or default_position(configs[device_id])
 
     def _planned_start(
         self,

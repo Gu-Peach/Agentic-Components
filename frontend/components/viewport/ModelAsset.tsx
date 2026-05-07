@@ -2,7 +2,7 @@
 
 import { Suspense, useMemo } from 'react';
 import { useGLTF } from '@react-three/drei';
-import { Box3, Vector3 } from 'three';
+import { Box3, Object3D, Vector3 } from 'three';
 import type { SceneDevice } from '@/types/scene';
 
 type ModelAssetProps = {
@@ -10,6 +10,8 @@ type ModelAssetProps = {
   isSelected: boolean;
   onSelect: (deviceId: string) => void;
 };
+
+type ThreeObject3D = InstanceType<typeof Object3D>;
 
 const TARGET_MODEL_SIZE = 6;
 
@@ -48,6 +50,8 @@ function GLTFAsset({ device, isSelected, onSelect }: ModelAssetProps) {
   const gltf = useGLTF(device.modelUrl ?? '');
   const normalizedScene = useMemo(() => {
     const clone = gltf.scene.clone(true);
+    clone.name = device.name;
+    enableModelShadows(clone);
 
     if (device.preserveSceneCoordinates) {
       clone.position.set(0, 0, 0);
@@ -69,7 +73,7 @@ function GLTFAsset({ device, isSelected, onSelect }: ModelAssetProps) {
       -center.z * uniformScale,
     );
     return clone;
-  }, [device.preserveSceneCoordinates, gltf.scene]);
+  }, [device.name, device.preserveSceneCoordinates, gltf.scene]);
 
   return (
     <>
@@ -77,6 +81,15 @@ function GLTFAsset({ device, isSelected, onSelect }: ModelAssetProps) {
       {isSelected ? <SelectionRing /> : null}
     </>
   );
+}
+
+function enableModelShadows(root: ThreeObject3D) {
+  root.traverse((node: ThreeObject3D) => {
+    if ((node as ThreeObject3D & { isMesh?: boolean }).isMesh) {
+      node.castShadow = true;
+      node.receiveShadow = true;
+    }
+  });
 }
 
 export function ModelAsset(props: ModelAssetProps) {

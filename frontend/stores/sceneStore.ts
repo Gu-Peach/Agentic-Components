@@ -31,6 +31,7 @@ function createSceneFromCatalogItem(
 ): SceneDevice {
   const column = index % 4;
   const row = Math.floor(index / 4);
+  const preserveSceneCoordinates = shouldPreserveSceneCoordinates(device);
 
   return {
     id: `${device.id}-instance-${index}`,
@@ -38,14 +39,18 @@ function createSceneFromCatalogItem(
     type: device.deviceType,
     catalogId: device.id,
     modelUrl: device.modelUrl,
-    preserveSceneCoordinates: device.kind === 'layout',
+    preserveSceneCoordinates,
     source: device.kind,
     transform: {
-      position: [column * 8, 0, row * 8],
+      position: preserveSceneCoordinates ? [0, 0, 0] : [column * 8, 0, row * 8],
       rotation: [0, 0, 0],
       scale: [1, 1, 1],
     },
   };
+}
+
+function shouldPreserveSceneCoordinates(device: CatalogDevice) {
+  return device.kind === 'layout' || device.name === 'Coordinated Robotic Transfer Unit';
 }
 
 export const useSceneStore = create<SceneState>((set) => ({

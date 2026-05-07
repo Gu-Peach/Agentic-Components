@@ -506,7 +506,199 @@ result_agent
 - 运行后指标分析
 - Optimization Agent
 
-## 13. 与导师评价的回应方式
+## 13. 高级闭环能力补充
+
+当前已经完成的是最小闭环 MVP：计划可以被校验，动画执行后能回传 observation，后端可以按 step 推进到 `continue`、`finish` 或 `failed`。下一阶段需要补充更接近真实 Agent 的五类高级能力。这些能力不应一次性混入现有 MVP，而应作为独立增强层逐步落地。
+
+### 13.1 每一步执行前让用户确认/修改
+
+目标：Agent 在真正提交动画执行前，将当前 step 或完整 action plan 展示给用户，由用户选择确认、修改或取消。
+
+推荐状态字段：
+```json
+{
+  "approval_status": "pending",
+  "review_target": "current_step",
+  "editable_fields": ["target", "params", "planned_start", "planned_end"],
+  "user_decision": null
+}
+```
+
+推荐接口/事件：
+- `plan_review_required`：后端向前端通知需要用户确认。
+- `POST /api/agent/step/approve`：用户确认当前 step。
+- `POST /api/agent/step/revise`：用户提交修改后的参数。
+- `POST /api/agent/step/cancel`：用户取消本次仿真。
+
+前端 UI 入口：
+- 在 AI 聊天区展示计划摘要。
+- 在 Terminal 输出 `waiting_user_approval`。
+- 后续可增加 Plan Review 面板，显示 action list、设备、目标点、预计时间和依赖关系。
+
+落地顺序：
+1. 先支持完整计划执行前确认。
+2. 再支持逐 step 确认。
+3. 最后支持用户修改参数后触发局部重校验。
+
+### 13.2 Observation 不满足预期时自动重规划
+
+目标：当实际 observation 与 `expected_effects` 不一致时，Supervisor 不只返回 `failed`，而是根据失败类型选择 retry、repair 或 replan。
+
+失败分类：
+- `retryable_runtime_failure`：动画超时、临时未到位，可重试当前 step。
+- `repairable_plan_failure`：目标点缺失、仓位不可用，可修复参数。
+- `requires_replan`：设备不可达、依赖关系变化，需要重新规划剩余动作。
+- `requires_user`：语义目标不明确或多种修复方案都合理，需要用户选择。
+
+推荐状态字段：
+```json
+{
+  "failure_type": "requires_replan",
+  "failed_action_id": "a2",
+  "failed_segment_id": "seg_smart_storage_1_a2",
+  "actual_observation": {},
+  "expected_effects": [],
+  "repair_attempts": 0,
+  "replan_from_index": 1
+}
+```
+
+推荐 Supervisor 路由：
+- `retry_step`
+- `repair_plan`
+- `replan_remaining`
+- `ask_user`
+- `abort`
+
+落地顺序：
+1. 先做确定性 Critic：比较 segment 状态、目标点、设备状态、超时。
+2. 再做规则型 repair：例如仓位不可用时选择下一个空仓位。
+3. 最后引入 LLM Replanner：只重写失败 step 之后的剩余计划。
+
+### 13.3 Agent 主动询问缺失条件
+
+目标：当用户输入无法唯一确定仿真参数时，Agent 不应硬生成计划，而应暂停并向用户追问。
+
+触发条件：
+- 用户没有说明目标仓位、运行次数、仿真时长等关键参数。
+- 场景中存在多个可选设备或路径。
+- 参数冲突，例如指定了不存在的设备、仓位或动作。
+- 安全约束或资源约束无法自动判断。
+
+推荐状态字段：
+```json
+{
+  "clarification_status": "pending",
+  "missing_slots": ["targetCellId", "runCount"],
+  "questions": [
+    {
+      "id": "q_target_cell",
+      "text": "请选择入库目标仓位，或允许系统自动选择空仓位。",
+      "options": ["auto", "A1", "A2"]
+    }
+  ],
+  "answers": {}
+}
+```
+
+推荐接口/事件：
+- `clarification_required`
+- `POST /api/agent/clarification/answer`
+
+落地顺序：
+1. 先用规则检测缺失槽位。
+2. 前端把问题展示在聊天区。
+3. 用户回答后合并到 `AgentState`，重新进入 Planning Agent。
+
+### 13.4 多轮协商式计划修正 UI
+
+目标：用户可以在计划生成后，通过自然语言或表单多轮修改计划，而不是每次从头开始仿真。
+
+典型交互：
+```text
+用户：运行智能仓储仿真。
+Agent：已生成 5 步计划，目标仓位 A1，预计 18.2s。是否执行？
+用户：把仓位改成 A2，并让第二段慢一点。
+Agent：已修改 a2 的 targetCellId=A2，smart_storage speed=0.35，重新校验通过。是否执行？
+用户：执行。
+```
+
+推荐状态字段：
+```json
+{
+  "plan_version": 3,
+  "plan_history": ["plan_v1", "plan_v2"],
+  "active_plan_id": "plan_v3",
+  "revision_intent": {
+    "target": "a2",
+    "change": "set speed slower"
+  }
+}
+```
+
+前端 UI 入口：
+- Plan Summary：展示当前计划版本。
+- Action List：每一步可展开查看参数、依赖、预计时间。
+- Revision Message：用户自然语言修改要求。
+- Diff View：展示修改前后变化。
+
+落地顺序：
+1. 后端支持 `plan_version` 和 `plan_history`。
+2. 前端展示计划摘要和确认按钮。
+3. 支持自然语言 revision，转为局部 patch。
+4. patch 后重新执行 validator。
+
+### 13.5 LangGraph 节点级可视化与持久化运行状态
+
+目标：把当前 pipeline 的隐式流程升级为可观察、可恢复、可审计的 LangGraph 状态图。用户和开发者能看到 Agent 当前停在哪个节点、为什么等待、下一条边是什么。
+
+推荐节点：
+```text
+context_loader
+  -> planner
+  -> validator
+  -> user_review
+  -> executor
+  -> monitor
+  -> critic
+  -> supervisor
+  -> result
+```
+
+推荐持久化内容：
+- `agent_session`
+- `plan_versions`
+- `action_specs`
+- `execution_segments`
+- `observations`
+- `supervisor_routes`
+- `user_decisions`
+- `node_events`
+
+推荐 UI：
+- Agent Graph View：显示节点状态，包含 `pending`、`running`、`waiting_user`、`failed`、`completed`。
+- Timeline View：显示 plan、execution、observation、replan 的时间线。
+- Session Replay：后续可以根据持久化状态回放一次 Agent 决策过程。
+
+落地顺序：
+1. 先在现有 runtime 中记录 `node_events`。
+2. 再把 session、plan、observation 写入数据库。
+3. 前端展示只读节点状态。
+4. 最后迁移为真正 LangGraph `StateGraph` + checkpointer。
+
+### 13.6 五类能力的推荐实施顺序
+
+推荐按风险和依赖关系拆成四个阶段：
+
+1. 用户确认/修改：先让执行前有人工闸门，避免错误计划直接驱动画面。
+2. 主动追问：解决用户输入缺参问题，提高计划质量。
+3. 多轮计划修正 UI：让用户能在执行前迭代计划。
+4. Observation 失败自动重规划：在已有状态、确认和修正机制后再引入自动修复。
+5. LangGraph 可视化与持久化：最后把运行过程变成可审计、可恢复的正式 Agent runtime。
+
+这五项完成后，系统才会从“闭环 MVP”进一步升级为“可交互、可修正、可恢复、可解释”的 Agent 系统。
+
+## 14. 与导师评价的回应方式
 
 可以这样概括当前系统和下一步计划：
 
@@ -523,7 +715,7 @@ result_agent
 
 这个回应既承认当前不足，也能说明已有工作是闭环系统的基础。
 
-## 14. 设计原则
+## 15. 设计原则
 
 - LLM 不直接控制动画节点，只生成或修正规范化计划。
 - 轨迹、IK、smart_storage 运动继续由确定性工具负责。
@@ -533,7 +725,7 @@ result_agent
 - SimPy 日志不是纯展示，应成为 Agent observation 的一部分。
 - 失败不是只写日志，而要进入 retry / repair / replan 分支。
 
-## 15. 推荐下一步任务
+## 16. 推荐下一步任务
 
 接下来可以按以下顺序构建：
 
@@ -543,4 +735,3 @@ result_agent
 4. 修改后端 pipeline，从一次性返回 `execution_plan` 改为可 step-by-step 推进。
 5. 增加 Supervisor route，先实现 `continue`、`fail`、`finish` 三种分支。
 6. 在日志中显示闭环状态，例如 `plan_validated`、`step_started`、`observation_received`、`effect_satisfied`。
-

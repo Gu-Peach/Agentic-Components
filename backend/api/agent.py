@@ -68,6 +68,12 @@ async def observe_agent_step(
 
 
 async def _event_stream(result: dict[str, Any]) -> AsyncIterator[str]:
+    if result.get('status') == 'clarification_required':
+        yield _chunk('clarification_required', result['clarification_result'])
+        yield _chunk('final_response', {'content': result['final_response']})
+        yield 'data: [DONE]\n\n'
+        return
+
     yield _chunk('schedule_plan', result['schedule_plan'])
     yield _chunk('action_specs', {'items': result['action_specs']})
     yield _chunk('world_state', result['world_state'])

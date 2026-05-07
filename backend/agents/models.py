@@ -24,6 +24,7 @@ class AgentState:
     action_specs: list[dict[str, Any]] = field(default_factory=list)
     world_state: dict[str, Any] = field(default_factory=dict)
     validation_result: dict[str, Any] = field(default_factory=dict)
+    clarification_result: dict[str, Any] = field(default_factory=dict)
     execution_plan: dict[str, Any] | None = None
     observations: list[dict[str, Any]] = field(default_factory=list)
     result_events: list[dict[str, Any]] = field(default_factory=list)

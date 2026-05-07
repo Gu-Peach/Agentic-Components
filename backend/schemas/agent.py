@@ -24,12 +24,14 @@ class AgentRunRequest(BaseModel):
 class AgentRunResponse(BaseModel):
     model_config = {'extra': 'allow', 'populate_by_name': True}
 
+    status: str = 'completed'
     success: bool
     session_id: str
     schedule_plan: dict[str, Any]
     action_specs: list[dict[str, Any]] = Field(default_factory=list)
     world_state: dict[str, Any] = Field(default_factory=dict)
     validation_result: dict[str, Any] = Field(default_factory=dict)
+    clarification_result: dict[str, Any] = Field(default_factory=dict)
     execution_plan: dict[str, Any]
     observations: list[dict[str, Any]] = Field(default_factory=list)
     result_events: list[dict[str, Any]]

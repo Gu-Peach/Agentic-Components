@@ -2,6 +2,94 @@
 
 ## 阶段目标
 
+- 当前阶段：Phase 1 - Agent 澄清追问回归修复（M2）
+- 阶段周期：2026-05-07，1 天
+- 阶段目标：修复“把物料放到仓位”仍默认进入 A1 执行计划的问题，确保未指定仓位时不会被调度 fallback 自动补默认目标。
+- 验收标准：
+  - 输入“把物料放到仓位”时后端返回 `clarification_required`
+  - `/api/agent/stream` 不返回 `execution_plan` 或 `step_session`
+  - 前端聊天面板展示澄清问题，不显示待执行计划
+  - 输入“把物料放到仓位 A1”仍可继续生成计划
+  - 后端编译和前端 lint/typecheck 通过或记录阻塞原因
+
+## 当前阶段任务清单
+
+- `done` `AGENT-CLARIFY-BUG-050` `P0` `M2`
+  修复仓位缺失追问未生效的回归，增强后端澄清规则与前端澄清展示，避免调度阶段默认补 A1。
+  Acceptance Criteria: 缺仓位输入触发澄清事件；带 A1/A2 等明确仓位输入可执行；前端不会为澄清响应创建 pending plan；静态检查通过。
+
+## 阶段目标
+
+- 当前阶段：Phase 1 - Agent 主动追问缺失条件 MVP（M2）
+- 阶段周期：2026-05-07，1 天
+- 阶段目标：在调度前增加缺失条件识别能力，当用户输入无法形成明确可执行计划时，Agent 先返回澄清问题，不生成 execution plan 或触发动画。
+- 验收标准：
+  - 后端在 scheduling 前识别明显缺失的目标、设备或修正参数
+  - SSE 能输出 `clarification_required` 事件并保持 `/run` 兼容
+  - 前端收到澄清事件后只展示问题，不进入计划确认或动画执行
+  - 常规仿真输入仍能正常生成待确认计划
+  - Python 编译检查与前端 lint/typecheck 通过或记录阻塞原因
+
+## 当前阶段任务清单
+
+- `done` `AGENT-CLARIFY-049` `P0` `M2`
+  增加 Agent 主动追问缺失条件 MVP，在用户意图缺少关键执行槽位时返回结构化澄清问题，并阻止无效计划进入动画链路。
+  Acceptance Criteria: 后端返回 `clarification_required` 状态与问题列表；SSE 推送澄清事件；前端不会创建 pending execution plan；常规 demo 输入仍保持可执行。
+
+## 阶段目标
+
+- 当前阶段：Phase 1 - Agent 执行前人工确认闸门（M2）
+- 阶段周期：2026-05-07，1 天
+- 阶段目标：实现高级闭环能力的第一步，在 Agent 生成 execution plan 后先等待用户确认，不再自动立即驱动画面执行。
+- 验收标准：
+  - AI 聊天区展示待确认的计划摘要
+  - 用户点击执行后才写入 `execution_plan` 并启动动画
+  - 用户可以取消本次待执行计划
+  - 用户可以进入修改输入，基于当前计划重新提出修正要求
+  - SSE 接收与现有仿真播放链路保持兼容
+
+## 当前阶段任务清单
+
+- `done` `FE-AGENT-APPROVAL-048` `P0` `M2`
+  增加 Agent 计划执行前确认 UI 与前端状态暂存，使 execution plan 不再在 SSE 到达时自动播放。
+  Acceptance Criteria: `execution_plan` 先进入 pending review；确认后才调用 `setExecutionPlan`；取消和修改入口可用；前端静态检查通过或记录阻塞原因。
+
+## 阶段目标
+
+- 当前阶段：Phase 1 - Agent 高级闭环能力规划补充（M2）
+- 阶段周期：2026-05-07，1 天
+- 阶段目标：将下一阶段高级 Agent 能力纳入闭环架构文档，包括人工确认、自动重规划、主动追问、多轮计划修正 UI、LangGraph 节点级可视化与持久化。
+- 验收标准：
+  - `docs/agent/closed_loop_agent_architecture.md` 明确记录五类高级能力
+  - 每类能力包含目标、状态字段、接口或 UI 入口、落地顺序
+  - 明确这些能力属于当前 MVP 之后的增强阶段
+  - 不改变当前可运行 Agent MVP 行为
+
+## 当前阶段任务清单
+
+- `done` `DOC-AGENT-ADVANCED-047` `P1` `M2`
+  补充闭环 Agent 高级能力规划，将用户确认/修改、observation 失败重规划、主动追问、多轮协商 UI、LangGraph 可视化与持久化写入架构路线。
+  Acceptance Criteria: 文档新增高级能力章节；能力边界、状态模型、接口/UI 入口和阶段路线清晰；当前代码行为不变。
+
+## 阶段目标
+
+- 当前阶段：Phase 1 - Agent 聊天输出性能优化（M2）
+- 阶段周期：2026-05-07，1 天
+- 阶段目标：在功能实现和执行效率优先的阶段，关闭大模型流式输出的打字机逐字渲染，减少聊天面板卡顿并提高信息显示及时性。
+- 验收标准：
+  - AI 聊天面板不再调用 `useTypewriter`
+  - SSE 增量接收链路保持不变
+  - assistant 内容到达后直接显示
+  - 前端类型检查或 lint 通过
+
+## 当前阶段任务清单
+
+- `done` `FE-CHAT-PERF-046` `P1` `M2`
+  关闭 Agent 聊天面板的打字机效果，保留流式接收但直接渲染完整当前内容。
+  Acceptance Criteria: `AIChatPanel` 不再使用 `useTypewriter`；流式内容仍能更新 assistant 消息；前端静态检查通过或记录阻塞原因。
+
+## 阶段目标
+
 - 当前阶段：Phase 1 - 参考仓库 Git 边界整理（M2）
 - 阶段周期：2026-05-07，1 天
 - 阶段目标：将 `behavior` 与 `gptwin2` 明确为本地参考目录，避免主仓库将其作为 gitlink/submodule 统计到 Source Control。

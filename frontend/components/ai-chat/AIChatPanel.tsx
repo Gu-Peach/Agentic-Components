@@ -1,27 +1,42 @@
 'use client';
 
 import { FormEvent, useEffect, useRef, useState, useTransition } from 'react';
-import { Bot, SendHorizonal, Sparkles, UserRound } from 'lucide-react';
+import { SendHorizonal } from 'lucide-react';
+import type { AgentResultEvent, ExecutionPlan } from '@/lib/simulation/types';
 import type { AgentMessage } from '@/types/agent';
 import { useAgentStore } from '@/stores/agentStore';
 import { useSceneStore } from '@/stores/sceneStore';
 import { useSimulationStore } from '@/stores/simulationStore';
+import { ChatHeader, MessageCard } from './ChatParts';
+import { PlanReviewCard } from './PlanReviewCard';
+import {
+  formatPlanBrief,
+  isResultEvent,
+  toResultEvent,
+} from './planReviewEvents';
 import { streamChat } from './streamChat';
-import { useTypewriter } from './useTypewriter';
+
+type PendingAgentRun = {
+  plan: ExecutionPlan;
+  stepSessionId: string | null;
+  resultEvents: Array<Omit<AgentResultEvent, 'id'> & { id?: string }>;
+};
 
 export function AIChatPanel() {
   const { messages, appendMessage, updateMessage } = useAgentStore();
   const { agentSceneName } = useSceneStore();
-  const { queueResultEvent, setExecutionPlan, setStepSessionId } =
+  const { appendLog, queueResultEvent, setExecutionPlan, setStepSessionId } =
     useSimulationStore();
   const [input, setInput] = useState('');
+  const [pendingRun, setPendingRun] = useState<PendingAgentRun | null>(null);
   const [streamingId, setStreamingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
-  }, [messages]);
+  }, [messages, pendingRun]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -39,10 +54,16 @@ export function AIChatPanel() {
     const userMessage = createMessage('user', prompt);
     const assistantMessage = createMessage('assistant', '');
     const nextMessages = [...messages, userMessage, assistantMessage];
+    const resultEvents: PendingAgentRun['resultEvents'] = [];
+    const received: {
+      plan: ExecutionPlan | null;
+      stepSessionId: string | null;
+    } = { plan: null, stepSessionId: null };
     let fullText = '';
 
     appendMessage(userMessage);
     appendMessage(assistantMessage);
+    setPendingRun(null);
     setStreamingId(assistantMessage.id);
 
     try {
@@ -54,33 +75,73 @@ export function AIChatPanel() {
           updateMessage(assistantMessage.id, fullText);
         },
         onAgentEvent: (event) => {
-          if (event.type === 'execution_plan' && event.data) {
-            setExecutionPlan(event.data as Parameters<typeof setExecutionPlan>[0]);
-          }
-          if (event.type === 'step_session' && event.data?.session_id) {
-            setStepSessionId(event.data.session_id);
-          }
-          if (
-            event.type !== 'simpy_event'
-            && event.type !== 'summary'
-            && event.type !== 'agent_status'
-          ) {
+          if (event.type === 'clarification_required') {
+            const reason = String(event.data?.reason ?? 'missing_requirements');
+            appendLog(`[Agent] clarification_required: ${reason}`);
             return;
           }
-          queueResultEvent({
-            type: event.type,
-            time: Number(event.data?.time ?? 0),
-            source: event.data?.source,
-            event: event.data?.event,
-            text: event.data?.text ?? event.type,
-          });
+          if (event.type === 'execution_plan' && event.data) {
+            received.plan = event.data as unknown as ExecutionPlan;
+            return;
+          }
+          if (event.type === 'step_session' && event.data?.session_id) {
+            received.stepSessionId = String(event.data.session_id);
+            return;
+          }
+          if (isResultEvent(event)) {
+            resultEvents.push(toResultEvent(event));
+          }
         },
       });
+      if (received.plan && received.plan.segments.length > 0) {
+        setPendingRun({
+          plan: received.plan,
+          stepSessionId: received.stepSessionId,
+          resultEvents,
+        });
+        appendLog(
+          `[Agent] plan_review_required: ${received.plan.segments.length} steps`,
+        );
+      } else if (received.plan) {
+        appendLog('[Agent] no_executable_plan');
+      }
     } catch {
-      updateMessage(assistantMessage.id, 'Agent SSE 暂时不可用，请稍后重试。');
+      updateMessage(assistantMessage.id, 'Agent SSE is temporarily unavailable.');
     } finally {
       setStreamingId(null);
     }
+  };
+
+  const approvePendingRun = () => {
+    if (!pendingRun) {
+      return;
+    }
+
+    setExecutionPlan(pendingRun.plan);
+    if (pendingRun.stepSessionId) {
+      setStepSessionId(pendingRun.stepSessionId);
+    }
+    for (const event of pendingRun.resultEvents) {
+      queueResultEvent(event);
+    }
+    appendLog(`[Agent] user_approved_plan: ${pendingRun.plan.segments.length} steps`);
+    setPendingRun(null);
+  };
+
+  const cancelPendingRun = () => {
+    appendLog('[Agent] user_cancelled_plan');
+    setPendingRun(null);
+  };
+
+  const revisePendingRun = () => {
+    if (!pendingRun) {
+      return;
+    }
+
+    setInput(`Revise this simulation plan:\n${formatPlanBrief(pendingRun.plan)}\nRequest: `);
+    appendLog('[Agent] user_requested_plan_revision');
+    setPendingRun(null);
+    setTimeout(() => inputRef.current?.focus(), 0);
   };
 
   return (
@@ -88,12 +149,16 @@ export function AIChatPanel() {
       <ChatHeader streaming={Boolean(streamingId)} />
       <div ref={scrollRef} className='flex-1 space-y-2 overflow-auto px-3 py-3'>
         {messages.map((message) => (
-          <MessageCard
-            key={message.id}
-            message={message}
-            shouldType={message.id === streamingId}
-          />
+          <MessageCard key={message.id} message={message} />
         ))}
+        {pendingRun ? (
+          <PlanReviewCard
+            onApprove={approvePendingRun}
+            onCancel={cancelPendingRun}
+            onRevise={revisePendingRun}
+            plan={pendingRun.plan}
+          />
+        ) : null}
       </div>
       <form
         className='border-t border-[var(--border-soft)] p-3'
@@ -101,10 +166,11 @@ export function AIChatPanel() {
       >
         <div className='flex items-end gap-2 border border-[var(--border-strong)] bg-[#252525] p-2'>
           <textarea
+            ref={inputRef}
             className='max-h-28 min-h-16 flex-1 resize-none bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]'
             disabled={Boolean(streamingId)}
             onChange={(event) => setInput(event.target.value)}
-            placeholder='输入工艺或仿真要求...'
+            placeholder='Enter a process or simulation request...'
             value={input}
           />
           <button
@@ -117,49 +183,6 @@ export function AIChatPanel() {
         </div>
       </form>
     </section>
-  );
-}
-
-function ChatHeader({ streaming }: { streaming: boolean }) {
-  return (
-    <div className='flex h-10 items-center justify-between border-b border-[var(--border-soft)] px-3'>
-      <div className='flex items-center gap-2 text-sm text-[var(--text-primary)]'>
-        <Sparkles size={14} className='text-[var(--text-accent)]' />
-        <span>大模型聊天</span>
-      </div>
-      <span className='text-[11px] text-[var(--text-muted)]'>
-        {streaming ? 'Agent streaming...' : 'Agent SSE'}
-      </span>
-    </div>
-  );
-}
-
-function MessageCard({
-  message,
-  shouldType,
-}: {
-  message: AgentMessage;
-  shouldType: boolean;
-}) {
-  const typedText = useTypewriter({
-    text: message.content,
-    batchSize: 1,
-    enabled: shouldType,
-  });
-  const text = shouldType ? typedText : message.content;
-  const Icon = message.role === 'user' ? UserRound : Bot;
-
-  return (
-    <div className='border border-[var(--border-strong)] bg-[rgba(0,0,0,0.16)] px-3 py-2'>
-      <div className='mb-1 flex items-center gap-2 text-[11px] uppercase tracking-wide text-[var(--text-muted)]'>
-        <Icon size={11} />
-        {message.role}
-      </div>
-      <p className='whitespace-pre-wrap text-sm leading-6 text-[var(--text-secondary)]'>
-        {text}
-        {shouldType ? <span className='ml-0.5 animate-pulse'>|</span> : null}
-      </p>
-    </div>
   );
 }
 

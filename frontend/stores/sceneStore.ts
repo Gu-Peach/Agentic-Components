@@ -50,7 +50,11 @@ function createSceneFromCatalogItem(
 }
 
 function shouldPreserveSceneCoordinates(device: CatalogDevice) {
-  return device.kind === 'layout' || device.name === 'Coordinated Robotic Transfer Unit';
+  return (
+    device.kind === 'layout'
+    || device.name === 'Coordinated Robotic Transfer Unit'
+    || device.name === 'Intelligent Storage and Logistics Line'
+  );
 }
 
 export const useSceneStore = create<SceneState>((set) => ({

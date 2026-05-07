@@ -12,7 +12,8 @@ import { useTypewriter } from './useTypewriter';
 export function AIChatPanel() {
   const { messages, appendMessage, updateMessage } = useAgentStore();
   const { agentSceneName } = useSceneStore();
-  const { queueResultEvent, setExecutionPlan } = useSimulationStore();
+  const { queueResultEvent, setExecutionPlan, setStepSessionId } =
+    useSimulationStore();
   const [input, setInput] = useState('');
   const [streamingId, setStreamingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -56,7 +57,14 @@ export function AIChatPanel() {
           if (event.type === 'execution_plan' && event.data) {
             setExecutionPlan(event.data as Parameters<typeof setExecutionPlan>[0]);
           }
-          if (event.type !== 'simpy_event' && event.type !== 'summary') {
+          if (event.type === 'step_session' && event.data?.session_id) {
+            setStepSessionId(event.data.session_id);
+          }
+          if (
+            event.type !== 'simpy_event'
+            && event.type !== 'summary'
+            && event.type !== 'agent_status'
+          ) {
             return;
           }
           queueResultEvent({

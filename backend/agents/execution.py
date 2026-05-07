@@ -8,6 +8,7 @@ from agents.motion.trajectory import (
     estimate_duration,
     robot_waypoints,
     smart_storage_waypoints,
+    smart_storage_waypoints_between,
 )
 from agents.qwen import QwenAgentClient
 
@@ -113,7 +114,12 @@ class ExecutionAgent:
             lift = float((config.get('trajectoryConfig') or {}).get('liftHeight', 0.3))
             return robot_waypoints(pick, place, lift), None
         if device_type == 'smart_storage':
-            return self._smart_storage_waypoints(action, config, configs)
+            return self._smart_storage_waypoints(
+                action,
+                config,
+                configs,
+                previous_segment,
+            )
         return [default_position(config)], None
 
     def _smart_storage_waypoints(
@@ -121,11 +127,12 @@ class ExecutionAgent:
         action: dict[str, Any],
         config: dict[str, Any],
         configs: dict[str, dict[str, Any]],
+        previous_segment: dict[str, Any] | None,
     ) -> tuple[list[Position], dict[str, Any] | None]:
+        current = self._previous_end(previous_segment) or default_position(config)
         if action.get('action') == 'deliver_to_next':
-            current = default_position(config)
             target = resolve_keypoint(configs, action.get('target'), 'entry')
-            return [current, target], None
+            return smart_storage_waypoints_between(config, current, target)
 
         params = action.get('params') or {}
         storage_id = params.get('storageId')
@@ -136,7 +143,14 @@ class ExecutionAgent:
             config,
             storage_config,
             params.get('targetCellId', 'A1'),
+            current,
         )
+
+    def _previous_end(self, segment: dict[str, Any] | None) -> Position | None:
+        waypoints = (segment or {}).get('waypoints') or []
+        if not waypoints:
+            return None
+        return dict(waypoints[-1])
 
     def _planned_start(
         self,

@@ -2,6 +2,94 @@
 
 ## 阶段目标
 
+- 当前阶段：Phase 1 - 参考仓库 Git 边界整理（M2）
+- 阶段周期：2026-05-07，1 天
+- 阶段目标：将 `behavior` 与 `gptwin2` 明确为本地参考目录，避免主仓库将其作为 gitlink/submodule 统计到 Source Control。
+- 验收标准：
+  - `behavior` 与 `gptwin2` 不再作为主仓库 tracked gitlink
+  - 根目录 `.gitignore` 忽略两个参考目录
+  - 本地目录内容不被删除
+  - `git status` 能清楚显示主仓库真实待提交项
+
+## 当前阶段任务清单
+
+- `done` `REPO-REF-IGNORE-045` `P0` `M2`
+  剥离 `behavior` 与 `gptwin2` 在主仓库中的 gitlink 跟踪关系，并将其作为本地参考目录忽略。
+  Acceptance Criteria: 两个目录已从主仓库索引移除但本地文件保留；`.gitignore` 已包含忽略规则；状态检查能够证明主仓库不再被参考项目污染。
+
+## 阶段目标
+
+- 当前阶段：Phase 1 - 闭环 Agent Step-by-step 执行协议（M2）
+- 阶段周期：2026-05-07，1 天
+- 阶段目标：在最小闭环状态模型基础上，实现后端按 segment 下发执行步骤、前端在动画完成后生成 observation、后端接收 observation 并推进下一步的基础协议。
+- 验收标准：
+  - 后端提供 step session 初始化、当前 step 查询、observation 提交和下一步推进能力
+  - 前端 simulation store 能产生 `segment_completed` / `simulation_completed` 观察事件
+  - 当前一次性 SSE 播放链路保持兼容
+  - 新增协议可表达 `continue`、`finish`、`failed` 三种 supervisor route
+  - Python 编译检查与前端 lint/typecheck 通过或记录阻塞原因
+
+## 当前阶段任务清单
+
+- `done` `AGENT-STEP-LOOP-044` `P0` `M2`
+  构建闭环 Agent 的最小 step-by-step 执行协议，使后端能够逐段推进执行并接收前端 observation。
+  Acceptance Criteria: 后端 step runtime/API 已实现；前端 observation 状态已实现；现有一次性动画仍兼容；静态检查通过或记录阻塞原因。
+
+## 阶段目标
+
+- 当前阶段：Phase 1 - 闭环 Agent 最小状态模型与校验器（M2）
+- 阶段周期：2026-05-07，1 天
+- 阶段目标：基于 `docs/agent/closed_loop_agent_architecture.md` 构建闭环 Agent 的第一层基础能力，在现有三 Agent pipeline 上增加动作规范、世界状态、观察结果和确定性计划校验。
+- 验收标准：
+  - 后端存在 `ActionSpec`、`WorldState`、`Observation`、`ValidationResult` 等结构
+  - 调度计划可被转换为可校验的 action specs
+  - Validator 能检查设备存在性、目标仓位、关键点、依赖关系和基础执行约束
+  - Agent pipeline 返回闭环相关状态，供前端/用户查看
+  - Python 编译检查与前端静态检查通过或记录阻塞原因
+
+## 当前阶段任务清单
+
+- `done` `BE-AGENT-CLOSED-LOOP-043` `P0` `M2`
+  在现有 Agent MVP 上实现闭环 Agent 的最小状态模型与确定性校验器，为后续 step-by-step 执行和轮询观察打基础。
+  Acceptance Criteria: 新增闭环状态/动作/观察/校验结构；pipeline 输出 action_specs、world_state、validation_result；校验失败能结构化返回；静态检查通过或记录阻塞原因。
+
+## 阶段目标
+
+- 当前阶段：Phase 1 - 闭环 Agent 架构规划文档（M2）
+- 阶段周期：2026-05-07，1 天
+- 阶段目标：基于当前 prompt-based Agent MVP，总结其边界并规划升级为带计划、校验、执行、观察、重规划循环的闭环 Agent 架构。
+- 验收标准：
+  - 文档明确解释导师提到的轮询/闭环含义
+  - 文档区分当前 MVP 与真正 Agent 系统的差异
+  - 文档给出状态模型、动作规范、轮询循环、Agent 职责和落地阶段
+  - 文档能作为下一步实现闭环 Agent 的构建依据
+
+## 当前阶段任务清单
+
+- `done` `DOC-AGENT-CLOSED-LOOP-042` `P0` `M2`
+  编写闭环 Agent 架构规划文档，将当前三 Agent MVP 升级路径整理为可实现的计划-执行-观察-校验-重规划方案。
+  Acceptance Criteria: `docs/agent` 下存在中文规划文档；覆盖轮询机制、状态模型、动作 DSL、Agent 分工、接口事件和实施路线。
+
+## 阶段目标
+
+- 当前阶段：Phase 1 - Intelligent Storage 动画执行接入（M2）
+- 阶段周期：2026-05-07，1 天
+- 阶段目标：核查并接入 `Intelligent Storage and Logistics Line` 首例动画，支持 smart_storage 的水平 root 运动、竖直 carrier 抬升和物块代理方块轨迹运动。
+- 验收标准：
+  - 明确当前项目是否已有 smart_storage 动画执行方案
+  - 读取并对齐 Intelligent Storage 的 scene_skills 设备字段
+  - smart_storage 动画能根据 rootNodeName / carrierNodeName 分别驱动水平与竖直节点
+  - 物块坐标错误时使用包围盒生成代理方块，以底部中心作为轨迹参考点
+  - Python 编译检查与前端 lint/typecheck 通过或记录阻塞原因
+
+## 当前阶段任务清单
+
+- `done` `FE-STORAGE-SIM-041` `P0` `M2`
+  核查并实现 Intelligent Storage and Logistics Line 的 smart_storage 与物块代理动画执行链路。
+  Acceptance Criteria: 能说明现有支持范围；必要动画执行器已落地；物块代理方块以包围盒底部中心对齐轨迹；静态检查通过或记录阻塞原因。
+
+## 阶段目标
+
 - 当前阶段：Phase 1 - Behavior 模型加载与轨迹工具等价性核查（M2）
 - 阶段周期：2026-05-07，1 天
 - 阶段目标：核查当前项目与 behavior 在 GLB 模型加载、scene_skills 注册、轨迹点选取和执行器输入上的差异，确认动画错位是否由加载链路或轨迹工具差异导致，并给出或实施修复。

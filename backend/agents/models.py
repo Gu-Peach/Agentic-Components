@@ -21,7 +21,11 @@ class AgentState:
     scene_graph: dict[str, Any]
     device_configs: dict[str, dict[str, Any]]
     schedule_plan: dict[str, Any] | None = None
+    action_specs: list[dict[str, Any]] = field(default_factory=list)
+    world_state: dict[str, Any] = field(default_factory=dict)
+    validation_result: dict[str, Any] = field(default_factory=dict)
     execution_plan: dict[str, Any] | None = None
+    observations: list[dict[str, Any]] = field(default_factory=list)
     result_events: list[dict[str, Any]] = field(default_factory=list)
     final_response: str | None = None
     validation_errors: list[str] = field(default_factory=list)

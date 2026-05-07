@@ -66,9 +66,21 @@ def smart_storage_waypoints(
     device_config: dict[str, Any],
     storage_config: dict[str, Any],
     target_cell_id: str,
+    current_position: Position | None = None,
 ) -> tuple[list[Position], dict[str, Any]]:
-    current = default_position(device_config)
     target = _find_cell_position(storage_config, target_cell_id)
+    return smart_storage_waypoints_between(
+        device_config,
+        current_position or default_position(device_config),
+        target,
+    )
+
+
+def smart_storage_waypoints_between(
+    device_config: dict[str, Any],
+    current: Position,
+    target: Position,
+) -> tuple[list[Position], dict[str, Any]]:
     motion = device_config.get('motion') or {}
     root_axis = motion.get('rootAxis', 'x')
     carrier_axis = motion.get('carrierAxis', 'y')

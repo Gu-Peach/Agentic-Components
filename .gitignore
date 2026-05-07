@@ -9,3 +9,7 @@ node_modules/
 __pycache__/
 *.py[cod]
 .venv/
+
+# Local reference repositories, not part of this project.
+behavior/
+gptwin2/

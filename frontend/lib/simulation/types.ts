@@ -21,7 +21,12 @@ export type DeviceConfig = {
   id: string;
   type: string;
   rootNodeName?: string;
+  carrierNodeName?: string;
   keyPoints?: { name: string; origin: VectorPoint }[];
+  motion?: {
+    rootAxis?: 'x' | 'y' | 'z';
+    carrierAxis?: 'x' | 'y' | 'z';
+  };
   trajectoryConfig?: { liftHeight?: number; speed?: number };
   urdf?: {
     joints: UrdfJointConfig[];
@@ -39,6 +44,12 @@ export type ExecutionSegment = {
   planned_start: number;
   planned_end: number;
   waypoints: VectorPoint[];
+  motionData?: {
+    rootOffset?: number;
+    carrierOffset?: number;
+    rootAxis?: 'x' | 'y' | 'z';
+    carrierAxis?: 'x' | 'y' | 'z';
+  };
 };
 
 export type ExecutionPlan = {
@@ -54,4 +65,16 @@ export type AgentResultEvent = {
   source?: string;
   event?: string;
   text: string;
+};
+
+export type SegmentObservation = {
+  type: 'step_observation';
+  action_id?: string;
+  segment_id?: string;
+  status: 'completed' | 'failed';
+  sim_time: number;
+  events: string[];
+  objects?: Record<string, unknown>;
+  error?: string;
+  recordedAt: number;
 };

@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import type {
   AgentResultEvent,
   ExecutionPlan,
+  SegmentObservation,
 } from '@/lib/simulation/types';
 
 type SimulationLog = {
@@ -20,15 +21,22 @@ type SimulationState = {
   logs: SimulationLog[];
   executionPlan: ExecutionPlan | null;
   executionStartedAt: number | null;
+  stepSessionId: string | null;
   resultEvents: AgentResultEvent[];
   emittedResultEventIds: string[];
+  completedSegmentIds: string[];
+  observations: SegmentObservation[];
   setRunning: (value: boolean) => void;
   setSpeed: (value: number) => void;
   setElapsedSeconds: (value: number) => void;
   appendLog: (message: string, time?: string) => void;
   setExecutionPlan: (plan: ExecutionPlan) => void;
+  setStepSessionId: (sessionId: string | null) => void;
   queueResultEvent: (event: Omit<AgentResultEvent, 'id'> & { id?: string }) => void;
   markResultEventEmitted: (eventId: string) => void;
+  recordSegmentObservation: (
+    observation: Omit<SegmentObservation, 'type' | 'recordedAt'>,
+  ) => SegmentObservation | null;
   reset: () => void;
 };
 
@@ -46,8 +54,11 @@ export const useSimulationStore = create<SimulationState>((set) => ({
   logs: initialLogs,
   executionPlan: null,
   executionStartedAt: null,
+  stepSessionId: null,
   resultEvents: [],
   emittedResultEventIds: [],
+  completedSegmentIds: [],
+  observations: [],
   setRunning: (value) => set({ isRunning: value }),
   setSpeed: (value) => set({ speed: value }),
   setElapsedSeconds: (elapsedSeconds) =>
@@ -73,9 +84,13 @@ export const useSimulationStore = create<SimulationState>((set) => ({
       elapsedSeconds: 0,
       currentTime: '00:00:00',
       isRunning: true,
+      stepSessionId: null,
       resultEvents: [],
       emittedResultEventIds: [],
+      completedSegmentIds: [],
+      observations: [],
     }),
+  setStepSessionId: (stepSessionId) => set({ stepSessionId }),
   queueResultEvent: (event) =>
     set((state) => {
       const normalized = normalizeResultEvent(event);
@@ -97,6 +112,31 @@ export const useSimulationStore = create<SimulationState>((set) => ({
         ? state.emittedResultEventIds
         : [...state.emittedResultEventIds, eventId],
     })),
+  recordSegmentObservation: (input) => {
+    let recorded: SegmentObservation | null = null;
+    set((state) => {
+      const segmentId = input.segment_id ?? input.action_id ?? `${input.sim_time}`;
+      if (state.completedSegmentIds.includes(segmentId)) {
+        return state;
+      }
+
+      const observation: SegmentObservation = {
+        type: 'step_observation',
+        ...input,
+        segment_id: input.segment_id,
+        action_id: input.action_id,
+        events: input.events.length ? input.events : ['segment_completed'],
+        recordedAt: Date.now(),
+      };
+      recorded = observation;
+
+      return {
+        completedSegmentIds: [...state.completedSegmentIds, segmentId],
+        observations: [...state.observations, observation],
+      };
+    });
+    return recorded;
+  },
   reset: () =>
     set({
       isRunning: false,
@@ -104,8 +144,11 @@ export const useSimulationStore = create<SimulationState>((set) => ({
       elapsedSeconds: 0,
       executionPlan: null,
       executionStartedAt: null,
+      stepSessionId: null,
       resultEvents: [],
       emittedResultEventIds: [],
+      completedSegmentIds: [],
+      observations: [],
       speed: 1,
       logs: initialLogs,
     }),

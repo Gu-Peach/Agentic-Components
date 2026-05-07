@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect } from 'react';
+import type { SegmentObservation } from '@/lib/simulation/types';
 import { useSimulationStore } from '@/stores/simulationStore';
 
 const COMPLETION_EPSILON = 0.05;
+let observationSync = Promise.resolve();
 
 export function SimulationClock() {
   const executionStartedAt = useSimulationStore((state) => state.executionStartedAt);
@@ -25,6 +27,7 @@ export function SimulationClock() {
 
         store.setElapsedSeconds(elapsed);
         emitDueEvents(elapsed);
+        emitSegmentObservations(elapsed);
         stopWhenComplete(elapsed);
       }
 
@@ -63,7 +66,92 @@ function stopWhenComplete(elapsed: number) {
 
   if (endTime > 0 && elapsed >= endTime + COMPLETION_EPSILON) {
     store.setElapsedSeconds(endTime);
+    recordSimulationCompleted(endTime);
     store.setRunning(false);
+  }
+}
+
+function emitSegmentObservations(elapsed: number) {
+  const store = useSimulationStore.getState();
+  const segments = store.executionPlan?.segments ?? [];
+
+  for (const segment of segments) {
+    if (segment.planned_end > elapsed) {
+      continue;
+    }
+
+    const observation = store.recordSegmentObservation({
+      action_id: segment.action_id,
+      segment_id: segment.id,
+      status: 'completed',
+      sim_time: segment.planned_end,
+      events: ['segment_completed'],
+    });
+
+    if (observation) {
+      store.appendLog(
+        `[Agent] observation ${segment.id ?? segment.device_id} completed`,
+        formatClock(segment.planned_end),
+      );
+      if (store.stepSessionId) {
+        enqueueObservationSync(store.stepSessionId, observation);
+      }
+    }
+  }
+}
+
+function recordSimulationCompleted(endTime: number) {
+  const store = useSimulationStore.getState();
+  const observation = store.recordSegmentObservation({
+    segment_id: 'simulation_completed',
+    status: 'completed',
+    sim_time: endTime,
+    events: ['simulation_completed'],
+  });
+
+  if (observation) {
+    store.appendLog('[Agent] simulation_completed', formatClock(endTime));
+  }
+}
+
+function enqueueObservationSync(
+  sessionId: string,
+  observation: SegmentObservation,
+) {
+  observationSync = observationSync
+    .then(() => submitStepObservation(sessionId, observation))
+    .catch(() => undefined);
+}
+
+async function submitStepObservation(
+  sessionId: string,
+  observation: SegmentObservation,
+) {
+  const response = await fetch('/api/agent/step/observe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      sessionId,
+      actionId: observation.action_id,
+      segmentId: observation.segment_id,
+      status: observation.status,
+      simTime: observation.sim_time,
+      events: observation.events,
+      objects: observation.objects ?? {},
+      error: observation.error,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error('observation sync failed');
+  }
+
+  const data = await response.json() as { route?: string; message?: string };
+  if (data.route === 'finish' || data.route === 'failed') {
+    useSimulationStore.getState().appendLog(
+      `[Agent] supervisor route: ${data.route}${data.message ? ` - ${data.message}` : ''}`,
+      formatClock(observation.sim_time),
+    );
   }
 }
 

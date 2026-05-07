@@ -8,6 +8,8 @@ export type AgentStreamEvent = {
     time?: number;
     source?: string;
     event?: string;
+    session_id?: string;
+    [key: string]: unknown;
   };
 };
 

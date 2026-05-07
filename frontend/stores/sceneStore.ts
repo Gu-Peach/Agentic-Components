@@ -10,6 +10,7 @@ type SceneState = {
   selectedDeviceId: string;
   sceneLabel: string;
   sceneSource: 'mock' | 'component' | 'layout';
+  agentSceneName: string;
   isSceneLoading: boolean;
   loadError: string | null;
   selectDevice: (deviceId: string) => void;
@@ -37,6 +38,7 @@ function createSceneFromCatalogItem(
     type: device.deviceType,
     catalogId: device.id,
     modelUrl: device.modelUrl,
+    preserveSceneCoordinates: device.kind === 'layout',
     source: device.kind,
     transform: {
       position: [column * 8, 0, row * 8],
@@ -51,6 +53,7 @@ export const useSceneStore = create<SceneState>((set) => ({
   selectedDeviceId: initialSelectedId,
   sceneLabel: '焊接单元',
   sceneSource: 'mock',
+  agentSceneName: 'Coordinated Robotic Transfer Unit',
   isSceneLoading: false,
   loadError: null,
   selectDevice: (deviceId) =>
@@ -84,6 +87,7 @@ export const useSceneStore = create<SceneState>((set) => ({
         sceneLabel:
           state.devices.length === 0 ? device.name : `${state.devices.length + 1} Models`,
         sceneSource: device.kind,
+        agentSceneName: device.name,
         isSceneLoading: false,
       }));
     } catch (error) {

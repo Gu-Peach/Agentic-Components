@@ -1,8 +1,9 @@
 'use client';
 
-import { MathUtils } from 'three';
-import type { Object3D } from 'three';
+import { MathUtils, Object3D } from 'three';
 import type { SceneDevice, TransformTuple } from '@/types/scene';
+
+type ThreeObject3D = InstanceType<typeof Object3D>;
 
 export function toRadians([x, y, z]: TransformTuple): TransformTuple {
   return [
@@ -16,7 +17,7 @@ function toDegrees(radians: number) {
   return MathUtils.radToDeg(radians);
 }
 
-export function transformFromObject(object: Object3D): SceneDevice['transform'] {
+export function transformFromObject(object: ThreeObject3D): SceneDevice['transform'] {
   return {
     position: [
       Number(object.position.x.toFixed(3)),

@@ -2,6 +2,131 @@
 
 ## 阶段目标
 
+- 当前阶段：Phase 1 - Behavior 动画执行等价性核对与修复（M2）
+- 阶段周期：2026-05-06，1 天
+- 阶段目标：核对当前 Agent 动画执行链路与 behavior 项目在轨迹点生成、坐标空间、R3F 场景加载、机械臂 IK 执行上的差异，修复首例中轨迹点和动作不对齐的问题。
+- 验收标准：
+  - 明确当前实现与 behavior 是否逐项等价，不再以“百分百复刻”描述未迁移部分
+  - 轨迹点坐标空间与 GLB 场景坐标空间一致
+  - Coordinated Robotic Transfer Unit 首例的 conveyor 与 robot_arm segment 能按 behavior 的执行语义对齐
+  - `pnpm run lint` 与 `tsc --noEmit` 通过或记录阻塞原因
+
+## 当前阶段任务清单
+
+- `done` `FE-BEHAVIOR-PARITY-039` `P0` `M2`
+  对照 behavior 的轨迹规划和 R3F 执行链路，修复当前项目首例动画的坐标空间和动作段对齐问题。
+  Acceptance Criteria: 当前实现说明清楚哪些部分已复刻、哪些部分仍是适配；首例轨迹点与场景节点坐标一致；前端静态检查通过或记录阻塞原因。
+
+## 阶段目标
+
+- 当前阶段：Phase 1 - Agent 仿真播放与日志同步修复（M2）
+- 阶段周期：2026-05-06，1 天
+- 阶段目标：修复 Agent 首例执行链路中 SimPy 日志一次性输出和场景动画不执行的问题，将终端输出改为跟随动画仿真时间依次追加，并按 behavior 中的执行方式迁移首例所需的传送带线性运动、机械臂 IK 映射与执行器。
+- 验收标准：
+  - Agent SSE 返回的 SimPy/result events 不再在聊天回调中一次性写入终端
+  - 前端播放时按照 `executionStartedAt`、`speed` 和事件 `time` 依次追加终端日志
+  - Coordinated Robotic Transfer Unit 首例能根据 `execution_plan.segments` 驱动物料移动和机械臂 IK 动作
+  - 复用 behavior 的 IK 构建、CCD 求解和仿真执行思路，保持文件行数约束
+  - `pnpm run lint` 通过或记录阻塞原因
+
+## 当前阶段任务清单
+
+- `done` `FE-AGENT-SIM-038` `P0` `M2`
+  修复 Agent 首例仿真播放链路：将 SimPy 终端日志改为动画时钟驱动的逐条输出，并迁移 behavior 的执行器/IK 动画方式到当前前端。
+  Acceptance Criteria: 终端日志按仿真时间依次出现；Coordinated Robotic Transfer Unit 的传送带物料移动和机械臂 IK 动作可由 Agent execution_plan 触发；前端 lint 通过或记录阻塞原因。
+
+## 阶段目标
+
+- 当前阶段：Phase 1 - Qwen 多 Key Agent 配置与首例输入说明（M2）
+- 阶段周期：2026-05-06，1 天
+- 阶段目标：为三 Agent 系统补充通义千问多 API key 轮换配置，验证 Coordinated Robotic Transfer Unit 首例可由自然语言输入驱动，并整理用户输入示例。
+- 验收标准：
+  - 后端支持 `DASHSCOPE_API_KEYS` 逗号分隔多 key 配置
+  - Qwen 调用失败时可尝试下一个 key，全部失败后回退 deterministic pipeline
+  - 不将真实 API key 写入源码或提交文件
+  - 给出可在聊天输入框中使用的仿真输入案例
+  - 后端编译检查与前端 lint 通过或记录阻塞原因
+
+## 当前阶段任务清单
+
+- `done` `AGENT-QWEN-037` `P0` `M2`
+  接入 Qwen 多 key 轮换配置，验证首例 Agent pipeline，并整理输入框仿真案例。
+  Acceptance Criteria: Qwen client 支持多 key 轮换；Coordinated Robotic Transfer Unit pipeline 可运行；用户获得可直接输入的仿真指令示例。
+
+## 阶段目标
+
+- 当前阶段：Phase 1 - Coordinated Robotic Transfer Unit Agent 首例联调（M2）
+- 阶段周期：2026-05-06，1 天
+- 阶段目标：将三 Agent 系统跑通到首个 `Coordinated Robotic Transfer Unit` 案例，支持从 `frontend/public/demo/.../scene_skills` 读取场景与设备 skill，预留通义千问 API 配置，前端 Agent 流携带当前加载场景，终端实时接收 mock SimPy 事件。
+- 验收标准：
+  - 后端 Agent 上下文优先读取 `frontend/public/demo/Coordinated Robotic Transfer Unit/scene_skills`
+  - 调度、执行、结果输出三 Agent 均具备通义千问调用入口，未配置 API 时保留可测试回退路径
+  - 前端点击加载 Coordinated Robotic Transfer Unit 后保存 agent scene 名称
+  - AI 聊天调用 Agent stream 时携带当前 scene 名称
+  - Agent stream 的 SimPy/Terminal events 可写入终端状态
+  - 后端 Python 编译检查与前端 lint 通过或记录阻塞原因
+
+## 当前阶段任务清单
+
+- `done` `AGENT-FIRSTCASE-036` `P0` `M2`
+  跑通 Coordinated Robotic Transfer Unit 首个 Agent 案例：通义千问三 Agent 调用入口、frontend demo scene_skills 读取、前端场景名传递、终端事件接收。
+  Acceptance Criteria: 加载 Coordinated Robotic Transfer Unit 后，输入仿真需求可通过 `/api/agent/stream` 返回 schedule/execution/result 事件，并将 SimPy mock 日志写入终端。
+
+## 阶段目标
+
+- 当前阶段：Phase 1 - Agent 系统后端骨架（M2）
+- 阶段周期：2026-05-06，1 天
+- 阶段目标：根据 `docs/agent/three_agent_langgraph_architecture.md` 搭建后端 Agent 系统最小闭环，包含调度 Agent、执行 Agent、结果输出 Agent、demo scene_skills 读取、计划时间线生成和 SSE 事件输出。
+- 验收标准：
+  - 后端新增 `/api/agent/run` 和 `/api/agent/stream` 接口
+  - Agent pipeline 能读取 behavior demo 的 `scene_skills/scene.json` 与设备配置
+  - 调度 Agent 输出 `schedule_plan`
+  - 执行 Agent 输出带 `planned_start` / `planned_end` 的 `execution_plan`
+  - 结果输出 Agent 输出 mock SimPy/Terminal events
+  - Python 静态语法检查通过
+
+## 当前阶段任务清单
+
+- `done` `BE-AGENT-035` `P0` `M2`
+  搭建三 Agent 后端系统骨架，实现调度、执行、结果输出三段 pipeline 和 FastAPI 接口。
+  Acceptance Criteria: `/api/agent/run` 可返回 schedule/execution/result 三段结构；`/api/agent/stream` 可返回 SSE 事件流；代码文件满足行数约束；Python 编译检查通过。
+
+## 阶段目标
+
+- 当前阶段：Phase 1 - Agent 协作架构修订（M2）
+- 阶段周期：2026-05-06，1 天
+- 阶段目标：将 `docs/agent` 中的三 Agent 架构从场景理解/调度规划/结果生成修订为调度 Agent、执行 Agent、结果输出 Agent，明确基于 `behavior/frontend/public/demo/*/scene_skills/scene.json` 的场景格式、轨迹点生成复用方式，以及时序关系在三类 Agent 中的职责归属。
+- 验收标准：
+  - `docs/agent/three_agent_langgraph_architecture.md` 反映调度、执行、结果输出三 Agent 架构
+  - 文档明确 scene.json 作为场景理解输入格式的使用方式
+  - 文档明确执行 Agent 复用 behavior 轨迹点生成能力
+  - 文档回答动作时序、持续时间和下一设备启动时间应由哪一层处理
+
+## 当前阶段任务清单
+
+- `done` `DOC-AGENT-034` `P0` `M2`
+  修订三 Agent LangGraph 架构规划，将核心职责调整为调度、执行和结果输出，并补充时序关系分层设计。
+  Acceptance Criteria: 文档覆盖调度 Agent、执行 Agent、结果输出 Agent 的输入输出、职责边界、共享状态、时序处理原则和第一阶段实现范围。
+
+## 阶段目标
+
+- 当前阶段：Phase 1 - 三 Agent 协作架构规划（M2）
+- 阶段周期：2026-05-06，1 天
+- 阶段目标：基于 gptwin2 中单 Agent 三阶段 CoT 经验，整理 Agentic Components 的三 Agent LangGraph 协作架构，明确场景理解、调度规划、结果生成三类 Agent 的职责边界、状态契约和实现顺序。
+- 验收标准：
+  - `docs/agent/` 下新增三 Agent 架构规划文档
+  - 文档说明 gptwin2 经验如何迁移到当前项目
+  - 文档明确三个 Agent 的输入、输出、职责边界和 LangGraph 流程
+  - 文档给出第一阶段可落地实现范围
+
+## 当前阶段任务清单
+
+- `done` `DOC-AGENT-033` `P0` `M2`
+  编写三 Agent 协作架构规划文档，将 gptwin2 的场景理解、动作规划、DSL 生成三阶段经验迁移为当前项目的场景理解 Agent、调度规划 Agent、结果生成 Agent 设计。
+  Acceptance Criteria: `docs/agent/` 下存在中文规划文档，覆盖三个 Agent 的职责、输入输出、共享状态、LangGraph 编排方式和第一阶段实现范围。
+
+## 阶段目标
+
 - 当前阶段：Phase 1 - 视口相机稳定性修复（M2）
 - 阶段周期：2026-04-28，1 天
 - 阶段目标：移除 3D 视口中由场景对象变化触发的自动相机重置，确保移动、旋转、缩放、新增或删除模型时用户视角保持不变。

@@ -16,6 +16,7 @@ export type SceneDevice = {
   type: DeviceType;
   catalogId: string;
   modelUrl?: string;
+  preserveSceneCoordinates?: boolean;
   source: SceneSource;
   transform: DeviceTransform;
 };

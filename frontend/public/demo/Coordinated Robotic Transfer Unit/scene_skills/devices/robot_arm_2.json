@@ -1,0 +1,57 @@
+{
+  "id": "robot_arm_2",
+  "type": "robot_arm",
+  "displayName": "Fanuc 机械臂 2",
+  "description": "6 轴工业机械臂，负责物料抓取搬运",
+  "rootNodeName": "UR10_#2_002n",
+  "urdf": {
+    "joints": [
+      {
+        "name": "joint_1",
+        "nodeName": "Link1_003n",
+        "type": "revolute",
+        "axis": { "x": 0, "y": 1, "z": 0 },
+        "limit": { "lower": -3.14, "upper": 3.14 }
+      },
+      {
+        "name": "joint_2",
+        "nodeName": "Link2_004n",
+        "type": "revolute",
+        "axis": { "x": 0, "y": 0, "z": 1 },
+        "limit": { "lower": -1.57, "upper": 2.36 }
+      },
+      {
+        "name": "joint_3",
+        "nodeName": "Link3_005n",
+        "type": "revolute",
+        "axis": { "x": 0, "y": 0, "z": 1 },
+        "limit": { "lower": -1.57, "upper": 2.36 }
+      },
+      {
+        "name": "joint_4",
+        "nodeName": "Link4_006n",
+        "type": "revolute",
+        "axis": { "x": 0, "y": 0, "z": 1 },
+        "limit": { "lower": -1.57, "upper": 2.36 }
+      },
+      {
+        "name": "joint_5",
+        "nodeName": "Link5_007n",
+        "type": "revolute",
+        "axis": { "x": 1, "y": 0, "z": 0 },
+        "limit": { "lower": -1.57, "upper": 2.36 }
+      },
+      {
+        "name": "joint_6",
+        "nodeName": "Link6_008n",
+        "type": "revolute",
+        "axis": { "x": 0, "y": 1, "z": 0 },
+        "limit": { "lower": -1.57, "upper": 2.36 }
+      }
+    ]
+  },
+  "trajectoryConfig": {
+    "liftHeight": 0.3,
+    "speed": 1.0
+  }
+}

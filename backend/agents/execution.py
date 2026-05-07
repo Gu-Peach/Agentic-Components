@@ -1,0 +1,153 @@
+from typing import Any
+
+from agents.models import AgentState, Position
+from agents.qwen import QwenAgentClient
+from agents.trajectory import (
+    conveyor_waypoints,
+    default_position,
+    estimate_duration,
+    get_keypoint,
+    robot_waypoints,
+    smart_storage_waypoints,
+)
+
+
+class ExecutionAgent:
+    def __init__(self, llm: QwenAgentClient) -> None:
+        self.llm = llm
+
+    def run(self, state: AgentState) -> dict[str, Any]:
+        if not state.schedule_plan:
+            return {'segments': []}
+
+        segments: list[dict[str, Any]] = []
+        by_action: dict[str, dict[str, Any]] = {}
+
+        for action in state.schedule_plan.get('actions', []):
+            segment = self._segment_for_action(action, state.device_configs)
+            planned_start = self._planned_start(action, by_action)
+            duration = segment['estimated_duration']
+            segment['planned_start'] = planned_start
+            segment['planned_end'] = round(planned_start + duration, 3)
+            segments.append(segment)
+            by_action[action['action_id']] = segment
+
+        execution_plan = {
+            'segments': segments,
+            'workpiece_node_name': self._workpiece_node_name(state.device_configs),
+            'device_configs': state.device_configs,
+        }
+        notes = self.llm.complete_json(
+            agent_name='execution_agent',
+            system_prompt=(
+                '你是工业仿真的执行 Agent。轨迹点已由确定性算法生成，'
+                '请只补充 execution_notes JSON，不要修改 segments。'
+            ),
+            user_payload={
+                'schedule_plan': state.schedule_plan,
+                'execution_plan': execution_plan,
+            },
+            fallback={'execution_notes': []},
+        )
+        execution_plan['execution_notes'] = notes.get('execution_notes', [])
+        execution_plan['llm'] = notes.get('llm')
+        return execution_plan
+
+    def _segment_for_action(
+        self,
+        action: dict[str, Any],
+        configs: dict[str, dict[str, Any]],
+    ) -> dict[str, Any]:
+        device_id = action['device_id']
+        config = configs[device_id]
+        device_type = config.get('type', 'manual')
+        waypoints, motion_data = self._waypoints(action, config, configs)
+        duration = estimate_duration(waypoints, config)
+
+        segment = {
+            'id': f'seg_{device_id}_{action["action_id"]}',
+            'action_id': action['action_id'],
+            'device_id': device_id,
+            'device_type': device_type,
+            'segment_name': action['action'],
+            'algorithm': self._algorithm(device_type),
+            'waypoints': waypoints,
+            'estimated_duration': duration,
+        }
+        if motion_data:
+            segment['motionData'] = motion_data
+        return segment
+
+    def _waypoints(
+        self,
+        action: dict[str, Any],
+        config: dict[str, Any],
+        configs: dict[str, dict[str, Any]],
+    ) -> tuple[list[Position], dict[str, Any] | None]:
+        device_type = config.get('type')
+        if device_type == 'conveyor':
+            return conveyor_waypoints(config), None
+        if device_type == 'robot_arm':
+            pick = self._position(configs, action.get('source'), 'exit')
+            place = self._position(configs, action.get('target'), 'entry')
+            lift = float((config.get('trajectoryConfig') or {}).get('liftHeight', 0.3))
+            return robot_waypoints(pick, place, lift), None
+        if device_type == 'smart_storage':
+            return self._smart_storage_waypoints(action, config, configs)
+        return [default_position(config)], None
+
+    def _smart_storage_waypoints(
+        self,
+        action: dict[str, Any],
+        config: dict[str, Any],
+        configs: dict[str, dict[str, Any]],
+    ) -> tuple[list[Position], dict[str, Any] | None]:
+        if action.get('action') == 'deliver_to_next':
+            current = default_position(config)
+            target = self._position(configs, action.get('target'), 'entry')
+            return [current, target], None
+
+        params = action.get('params') or {}
+        storage_id = params.get('storageId')
+        storage_config = configs.get(storage_id)
+        if not storage_config:
+            return [default_position(config)], None
+        return smart_storage_waypoints(
+            config,
+            storage_config,
+            params.get('targetCellId', 'A1'),
+        )
+
+    def _position(
+        self,
+        configs: dict[str, dict[str, Any]],
+        device_id: str | None,
+        keypoint: str,
+    ) -> Position:
+        if not device_id or device_id not in configs:
+            return {'x': 0.0, 'y': 0.0, 'z': 0.0}
+        return get_keypoint(configs[device_id], keypoint) or default_position(configs[device_id])
+
+    def _planned_start(
+        self,
+        action: dict[str, Any],
+        by_action: dict[str, dict[str, Any]],
+    ) -> float:
+        dependencies = action.get('depends_on') or []
+        if dependencies:
+            return max(by_action[item]['planned_end'] for item in dependencies)
+        policy = action.get('start_policy') or {}
+        return float(policy.get('time', 0))
+
+    def _algorithm(self, device_type: str) -> str:
+        return {
+            'conveyor': 'conveyor_linear',
+            'robot_arm': 'robot_arm_ik',
+            'smart_storage': 'smart_storage_grid',
+        }.get(device_type, 'manual')
+
+    def _workpiece_node_name(self, configs: dict[str, dict[str, Any]]) -> str | None:
+        for config in configs.values():
+            if config.get('type') == 'workpiece':
+                return config.get('rootNodeName')
+        return None

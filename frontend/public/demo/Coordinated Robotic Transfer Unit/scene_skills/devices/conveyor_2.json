@@ -1,0 +1,17 @@
+{
+  "id": "conveyor_2",
+  "type": "conveyor",
+  "displayName": "传送带",
+  "description": "线性传送带，输送物料从入口到出口",
+  "rootNodeName": "Conveyor(2)",
+  "keyPoints": [
+    {
+      "name": "entry",
+      "origin": { "x": 0.108, "y": 0.7, "z": -0.666 }
+    },
+    {
+      "name": "exit",
+      "origin": { "x": -1.292, "y": 0.7, "z": -0.666 }
+    }
+  ]
+}

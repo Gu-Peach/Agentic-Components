@@ -1,0 +1,14 @@
+{
+  "id": "bottle",
+  "type": "workpiece",
+  "displayName": "物料",
+  "description": "被抓取的工件，无主动运动路径，仅提供关键点坐标",
+  "rootNodeName": "Sleeved_Bottle_00En",
+  "keyPoints": [
+    {
+      "name": "grasp_point",
+      "offset": { "x": 0, "y": 0.1, "z": 0 },
+      "description": "抓取点，位于物件顶部中心"
+    }
+  ]
+}

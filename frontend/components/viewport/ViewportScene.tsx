@@ -3,6 +3,7 @@
 import { useRef } from 'react';
 import { Environment, Grid, OrbitControls } from '@react-three/drei';
 import { ModelInstance } from '@/components/viewport/ModelInstance';
+import { AgentSimulationAnimator } from '@/components/viewport/simulation/AgentSimulationAnimator';
 import { useSceneStore } from '@/stores/sceneStore';
 
 type OrbitControlsHandle = {
@@ -52,6 +53,7 @@ export function ViewportScene({
           transformMode={transformMode}
         />
       ))}
+      <AgentSimulationAnimator />
       <OrbitControls ref={controlsRef} enableDamping makeDefault />
       <Environment preset='warehouse' />
     </>

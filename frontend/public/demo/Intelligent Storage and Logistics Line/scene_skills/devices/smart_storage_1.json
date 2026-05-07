@@ -1,0 +1,28 @@
+{
+  "id": "smart_storage_1",
+  "type": "smart_storage",
+  "displayName": "升降台1",
+  "description": "智能仓储设备，可沿水平和竖直方向移动，将物料送达仓储柜指定格子",
+  "rootNodeName": "X_00Dn",
+  "carrierNodeName": "Z_00En",
+  "motion": {
+    "rootAxis": "x",
+    "carrierAxis": "y",
+    "rootRange": {
+      "min": -4.142,
+      "max": 0.858
+    },
+    "carrierRange": {
+      "min": 0.185,
+      "max": 3.160
+    }
+  },
+  "keyPoints": [
+    {
+      "name": "transfer_board",
+      "auto": false,
+      "nodeName": "Z_00En",
+      "description": "传递板位置，用于工件挂载"
+    }
+  ]
+}

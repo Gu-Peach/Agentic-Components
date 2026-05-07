@@ -4,11 +4,15 @@ import { FormEvent, useEffect, useRef, useState, useTransition } from 'react';
 import { Bot, SendHorizonal, Sparkles, UserRound } from 'lucide-react';
 import type { AgentMessage } from '@/types/agent';
 import { useAgentStore } from '@/stores/agentStore';
+import { useSceneStore } from '@/stores/sceneStore';
+import { useSimulationStore } from '@/stores/simulationStore';
 import { streamChat } from './streamChat';
 import { useTypewriter } from './useTypewriter';
 
 export function AIChatPanel() {
   const { messages, appendMessage, updateMessage } = useAgentStore();
+  const { agentSceneName } = useSceneStore();
+  const { queueResultEvent, setExecutionPlan } = useSimulationStore();
   const [input, setInput] = useState('');
   const [streamingId, setStreamingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -43,13 +47,29 @@ export function AIChatPanel() {
     try {
       await streamChat({
         messages: nextMessages,
+        sceneName: agentSceneName,
         onDelta: (delta) => {
           fullText += delta;
           updateMessage(assistantMessage.id, fullText);
         },
+        onAgentEvent: (event) => {
+          if (event.type === 'execution_plan' && event.data) {
+            setExecutionPlan(event.data as Parameters<typeof setExecutionPlan>[0]);
+          }
+          if (event.type !== 'simpy_event' && event.type !== 'summary') {
+            return;
+          }
+          queueResultEvent({
+            type: event.type,
+            time: Number(event.data?.time ?? 0),
+            source: event.data?.source,
+            event: event.data?.event,
+            text: event.data?.text ?? event.type,
+          });
+        },
       });
     } catch {
-      updateMessage(assistantMessage.id, '本地 SSE demo 暂时不可用，请稍后重试。');
+      updateMessage(assistantMessage.id, 'Agent SSE 暂时不可用，请稍后重试。');
     } finally {
       setStreamingId(null);
     }
@@ -100,7 +120,7 @@ function ChatHeader({ streaming }: { streaming: boolean }) {
         <span>大模型聊天</span>
       </div>
       <span className='text-[11px] text-[var(--text-muted)]'>
-        {streaming ? 'SSE streaming...' : 'Demo SSE'}
+        {streaming ? 'Agent streaming...' : 'Agent SSE'}
       </span>
     </div>
   );

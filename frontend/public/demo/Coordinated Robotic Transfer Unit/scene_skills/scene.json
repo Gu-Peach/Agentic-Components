@@ -1,0 +1,44 @@
+{
+  "version": "1.0",
+  "name": "发动机装配产线",
+  "description": "物料从传送带入口输入，由第一个机械臂抓取与第二个机械臂交接，第二个机械臂获取物料后将其放置到第二条传送带运输",
+  "devices": [
+    { "id": "conveyor_1", "configFile": "devices/conveyor_1.json" },
+    { "id": "robot_arm_1", "configFile": "devices/robot_arm_1.json" },
+    { "id": "robot_arm_2", "configFile": "devices/robot_arm_2.json" },
+    { "id": "conveyor_2", "configFile": "devices/conveyor_2.json" },
+    { "id": "bottle", "configFile": "devices/bottle.json" }
+  ],
+  "topology": [
+    {
+      "from": "conveyor_1",
+      "to": "robot_arm_1",
+      "relation": "feeds",
+      "description": "传送带将物料输送至传送带出口"
+    },
+    {
+      "from": "robot_arm_1",
+      "to": "robot_arm_2",
+      "relation": "manipulates",
+      "description": "机械臂1抓取物料并搬运给第二个机械臂进行交接"
+    },
+    {
+      "from": "robot_arm_2",
+      "to": "conveyor_2",
+      "relation": "manipulates",
+      "description": "机械臂2抓取物料并搬运给末端传送带进行运输"
+    },
+    {
+      "from": "conveyor_2",
+      "to": "end",
+      "relation": "manipulates",
+      "description": "末端传送带运输物料到出口"
+    }
+  ],
+  "workflow": [
+    "传送带1运送物料到机械臂1工作范围",
+    "机械臂1抓取物料并搬运给第二个机械臂进行交接",
+    "机械臂2抓取物料并搬运给末端传送带进行运输",
+    "末端传送带运输物料"
+  ]
+}

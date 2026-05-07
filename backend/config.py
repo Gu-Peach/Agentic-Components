@@ -1,14 +1,18 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+BASE_DIR = Path(__file__).resolve().parent
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore",
+        env_file=(BASE_DIR / '.env', BASE_DIR / '.env.local'),
+        env_file_encoding='utf-8',
+        extra='ignore',
     )
 
     app_name: str = "Agentic Components Backend"
@@ -30,6 +34,12 @@ class Settings(BaseSettings):
     supabase_service_role_key: str | None = None
     supabase_jwt_secret: str | None = None
     supabase_storage_bucket: str = "agentic-components"
+    dashscope_api_key: str | None = None
+    dashscope_api_keys: str | None = None
+    qwen_model: str = "qwen-plus"
+    qwen_api_url: str = (
+        "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+    )
 
     @field_validator("cors_origins", mode="before")
     @classmethod

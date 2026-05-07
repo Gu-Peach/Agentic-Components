@@ -1,0 +1,57 @@
+{
+  "id": "smart_storage_1",
+  "type": "smart_storage",
+  "displayName": "智能仓储设备",
+  "description": "可沿水平方向移动并通过传递板完成竖直升降的仓储设备",
+  "rootNodeName": "SmartStorageRoot",
+  "carrierNodeName": "TransferBoard",
+  "motion": {
+    "rootAxis": "x",
+    "carrierAxis": "y",
+    "rootRange": {
+      "min": -2.0,
+      "max": 2.0
+    },
+    "carrierRange": {
+      "min": 0.2,
+      "max": 3.0
+    }
+  },
+  "grid": {
+    "origin": { "x": 0.0, "y": 0.5, "z": 0.0 },
+    "columns": 4,
+    "rows": 5,
+    "columnSpacing": 0.8,
+    "rowSpacing": 0.6,
+    "cells": [
+      { "id": "A1", "column": 0, "row": 0 },
+      { "id": "A2", "column": 0, "row": 1 },
+      { "id": "A3", "column": 0, "row": 2 },
+      { "id": "A4", "column": 0, "row": 3 },
+      { "id": "A5", "column": 0, "row": 4 },
+      { "id": "B1", "column": 1, "row": 0 },
+      { "id": "B2", "column": 1, "row": 1 },
+      { "id": "B3", "column": 1, "row": 2 },
+      { "id": "B4", "column": 1, "row": 3 },
+      { "id": "B5", "column": 1, "row": 4 },
+      { "id": "C1", "column": 2, "row": 0 },
+      { "id": "C2", "column": 2, "row": 1 },
+      { "id": "C3", "column": 2, "row": 2 },
+      { "id": "C4", "column": 2, "row": 3 },
+      { "id": "C5", "column": 2, "row": 4 },
+      { "id": "D1", "column": 3, "row": 0 },
+      { "id": "D2", "column": 3, "row": 1 },
+      { "id": "D3", "column": 3, "row": 2 },
+      { "id": "D4", "column": 3, "row": 3 },
+      { "id": "D5", "column": 3, "row": 4 }
+    ]
+  },
+  "keyPoints": [
+    {
+      "name": "transfer_board",
+      "auto": false,
+      "nodeName": "TransferBoard",
+      "description": "传递板位置，用于工件挂载"
+    }
+  ]
+}

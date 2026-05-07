@@ -6,6 +6,7 @@ import { ECatalogPanel } from '@/components/ecatalog/ECatalogPanel';
 import { TopBar } from '@/components/layout/TopBar';
 import { SimulationBar } from '@/components/layout/SimulationBar';
 import { PropertiesPanel } from '@/components/properties/PropertiesPanel';
+import { SimulationClock } from '@/components/simulation/SimulationClock';
 import { TerminalPanel } from '@/components/terminal/TerminalPanel';
 import { Viewport3D } from '@/components/viewport/Viewport3D';
 
@@ -34,6 +35,7 @@ export function WorkspaceLayout({ projectId }: WorkspaceLayoutProps) {
               <Group orientation='vertical'>
                 <Panel defaultSize={74} minSize={46}>
                   <div className='relative h-full'>
+                    <SimulationClock />
                     <SimulationBar />
                     <Viewport3D />
                   </div>

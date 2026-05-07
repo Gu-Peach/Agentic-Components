@@ -1,0 +1,53 @@
+{
+  "version": "1.0",
+  "name": "智能仓储流水线",
+  "description": "物料首先通过传送带传递给升降台，升降台将物料传递给仓储柜指定仓储位置。仓储柜后侧的升降台会获取指定位置的物料然后将它传递给最末端传送带进行传递",
+  "devices": [
+    { "id": "conveyor_1", "configFile": "devices/conveyor_1.json" },
+    { "id": "smart_storage_1", "configFile": "devices/smart_storage_1.json" },
+    { "id": "storage", "configFile": "devices/storage.json" },
+    { "id": "smart_storage_2", "configFile": "devices/smart_storage_2.json" },
+    { "id": "conveyor_2", "configFile": "devices/conveyor_2.json" },
+    { "id": "object", "configFile": "devices/object.json" }
+  ],
+  "topology": [
+    {
+      "from": "conveyor_1",
+      "to": "smart_storage_1",
+      "relation": "feeds",
+      "description": "传送带将物料输送至传送带出口，给升降台获取"
+    },
+    {
+      "from": "smart_storage_1",
+      "to": "storage",
+      "relation": "manipulates",
+      "description": "升降台1（智能仓储设备）将物料传递给仓储柜中的空闲位置"
+    },
+    {
+      "from": "storage",
+      "to": "smart_storage_2",
+      "relation": "manipulates",
+      "description": "升降台2从仓储柜中获取物料"
+    },
+    {
+      "from": "smart_storage_2",
+      "to": "conveyor_2",
+      "relation": "manipulates",
+      "description": "升降台2将物料传递给传送带2"
+    },
+    {
+      "from": "conveyor_2",
+      "to": "end",
+      "relation": "manipulates",
+      "description": "末端传送带运输物料到出口"
+    }
+  ],
+  "workflow": [
+    "传送带1将物料输送到出口位置",
+    "升降台1移动到传送带出口位置获取物料",
+    "升降台1将物料送达仓储柜的指定格子（如A1、A2等）",
+    "升降台2移动到仓储柜的指定格子获取物料",
+    "升降台2将物料传递给传送带2",
+    "传送带2将物料输送到出口"
+  ]
+}

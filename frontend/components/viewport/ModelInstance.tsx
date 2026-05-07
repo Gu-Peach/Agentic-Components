@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import { TransformControls } from '@react-three/drei';
-import type { Group } from 'three';
+import { Group } from 'three';
 import { ModelAsset } from '@/components/viewport/ModelAsset';
 import { toRadians, transformFromObject } from '@/components/viewport/modelUtils';
 import type { SceneDevice } from '@/types/scene';
@@ -10,6 +10,8 @@ import type { SceneDevice } from '@/types/scene';
 type OrbitControlsHandle = {
   enabled: boolean;
 };
+
+type ThreeGroup = InstanceType<typeof Group>;
 
 type ModelInstanceProps = {
   device: SceneDevice;
@@ -31,7 +33,7 @@ export function ModelInstance({
   controlsRef,
   transformMode,
 }: ModelInstanceProps) {
-  const groupRef = useRef<Group>(null);
+  const groupRef = useRef<ThreeGroup>(null);
   const content = (
     <group
       ref={groupRef}

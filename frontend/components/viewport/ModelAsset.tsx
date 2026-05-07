@@ -48,6 +48,13 @@ function GLTFAsset({ device, isSelected, onSelect }: ModelAssetProps) {
   const gltf = useGLTF(device.modelUrl ?? '');
   const normalizedScene = useMemo(() => {
     const clone = gltf.scene.clone(true);
+
+    if (device.preserveSceneCoordinates) {
+      clone.position.set(0, 0, 0);
+      clone.scale.set(1, 1, 1);
+      return clone;
+    }
+
     const bounds = new Box3().setFromObject(clone);
     const size = bounds.getSize(new Vector3());
     const center = bounds.getCenter(new Vector3());
@@ -62,7 +69,7 @@ function GLTFAsset({ device, isSelected, onSelect }: ModelAssetProps) {
       -center.z * uniformScale,
     );
     return clone;
-  }, [gltf.scene]);
+  }, [device.preserveSceneCoordinates, gltf.scene]);
 
   return (
     <>

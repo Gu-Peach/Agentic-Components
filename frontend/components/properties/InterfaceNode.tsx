@@ -3,7 +3,7 @@
 import { useRef, type PointerEvent } from 'react';
 import { Unplug } from 'lucide-react';
 import type { InterfacePoint, SceneDevice } from '@/types/scene';
-import { getDeviceInterfaces } from '@/components/properties/interfaceUtils';
+import { getInterfacePorts } from '@/components/properties/interfaceUtils';
 import {
   clampNodePosition,
   NODE_HEIGHT,
@@ -43,7 +43,7 @@ export function InterfaceNode({
   onNodePositionChange,
   onDisconnect,
 }: InterfaceNodeProps) {
-  const points = getDeviceInterfaces(device);
+  const points = getInterfacePorts(device);
   const dragState = useRef<DragState | null>(null);
 
   function handlePointerDown(event: PointerEvent<HTMLElement>) {
@@ -137,7 +137,7 @@ function InterfacePort({
   return (
     <div
       className={`absolute flex items-center gap-1 ${side === 'left' ? '-left-7' : '-right-7'}`}
-      style={{ top: portTop(device, point) }}
+      style={{ top: portTop(point) }}
     >
       {side === 'right' ? (
         <PortButton device={device} isPending={isPending} onClick={onInterfaceClick} point={point} />
@@ -190,6 +190,6 @@ function portSide(point: InterfacePoint) {
     : 'right';
 }
 
-function portTop(device: SceneDevice, point: InterfacePoint) {
-  return 26 + getDeviceInterfaces(device).findIndex((item) => item.name === point.name) * 18;
+function portTop(point: InterfacePoint) {
+  return point.direction === 'in' ? 26 : 44;
 }

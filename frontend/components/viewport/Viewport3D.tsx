@@ -31,7 +31,7 @@ export function Viewport3D() {
   );
 
   return (
-    <section className='relative h-full overflow-hidden bg-[#d5d2cb]'>
+    <section className='relative h-full overflow-hidden bg-white'>
       <div className='absolute left-6 top-6 z-10 flex gap-2'>
         {sceneBadges.map((badge, index) => (
           <span
@@ -51,7 +51,7 @@ export function Viewport3D() {
 
       <SceneToolbar mode={transformMode} onChange={setTransformMode} />
 
-      <Canvas camera={{ position: [8, 6, 10], fov: 45 }}>
+      <Canvas camera={{ position: [8, 6, 10], fov: 45 }} gl={{ alpha: false }}>
         <ViewportScene transformMode={transformMode} />
       </Canvas>
 

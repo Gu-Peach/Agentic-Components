@@ -2,7 +2,7 @@
 
 import { Suspense, useMemo } from 'react';
 import { useGLTF } from '@react-three/drei';
-import { Box3, Object3D, Vector3 } from 'three';
+import { Object3D } from 'three';
 import type { SceneDevice } from '@/types/scene';
 
 type ModelAssetProps = {
@@ -12,8 +12,6 @@ type ModelAssetProps = {
 };
 
 type ThreeObject3D = InstanceType<typeof Object3D>;
-
-const TARGET_MODEL_SIZE = 6;
 
 function SelectionRing() {
   return (
@@ -48,36 +46,16 @@ export function ModelFallback({
 
 function GLTFAsset({ device, isSelected, onSelect }: ModelAssetProps) {
   const gltf = useGLTF(device.modelUrl ?? '');
-  const normalizedScene = useMemo(() => {
+  const scene = useMemo(() => {
     const clone = gltf.scene.clone(true);
     clone.name = device.name;
     enableModelShadows(clone);
-
-    if (device.preserveSceneCoordinates) {
-      clone.position.set(0, 0, 0);
-      clone.scale.set(1, 1, 1);
-      return clone;
-    }
-
-    const bounds = new Box3().setFromObject(clone);
-    const size = bounds.getSize(new Vector3());
-    const center = bounds.getCenter(new Vector3());
-    const min = bounds.min.clone();
-    const maxAxis = Math.max(size.x, size.y, size.z, 0.001);
-    const uniformScale = TARGET_MODEL_SIZE / maxAxis;
-
-    clone.scale.setScalar(uniformScale);
-    clone.position.set(
-      -center.x * uniformScale,
-      -min.y * uniformScale,
-      -center.z * uniformScale,
-    );
     return clone;
-  }, [device.name, device.preserveSceneCoordinates, gltf.scene]);
+  }, [device.name, gltf.scene]);
 
   return (
     <>
-      <primitive object={normalizedScene} onClick={() => onSelect(device.id)} />
+      <primitive object={scene} onClick={() => onSelect(device.id)} />
       {isSelected ? <SelectionRing /> : null}
     </>
   );

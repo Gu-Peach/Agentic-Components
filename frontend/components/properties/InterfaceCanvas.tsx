@@ -2,7 +2,7 @@
 
 import type { InterfaceConnection, InterfacePoint, SceneDevice } from '@/types/scene';
 import { InterfaceNode } from '@/components/properties/InterfaceNode';
-import { getDeviceInterfaces } from '@/components/properties/interfaceUtils';
+import { getInterfacePorts } from '@/components/properties/interfaceUtils';
 import {
   measureCanvas,
   NODE_WIDTH,
@@ -118,7 +118,7 @@ function portCenter(
   const device = devices.find((item) => item.id === ref.deviceId);
   const position = nodePositions[ref.deviceId];
   if (!device || !position) return null;
-  const points = getDeviceInterfaces(device);
+  const points = getInterfacePorts(device);
   const point = points.find((item) => item.name === ref.interfaceName);
   const side = point ? portSide(point) : 'right';
   return {

@@ -14,6 +14,22 @@
 
 ## 当前阶段任务清单
 
+- `done` `FE-VIEWPORT-LOOK-065` `P0` `M2`
+  将当前前端视口的场景背景、光照与环境贴图调整为接近 animation 平台的渲染方式，提升模型贴图与整体观感一致性。
+  Acceptance Criteria: 视口使用接近 animation 的白色背景与环境光配置；模型材质表现更接近 animation 平台；`pnpm run lint` 与 `tsc --noEmit` 通过，或明确记录阻塞原因。
+
+- `done` `FE-RAW-SCALE-064` `P0` `M2`
+  调整前端模型加载策略，取消统一归一化缩放与自动重居中，改为保留所有模型原始 scale 与原始局部尺寸关系，对齐 animation 平台的加载方式。
+  Acceptance Criteria: 所有模型按原始 scale 显示；包围盒基于原始模型尺寸获取；不再按固定目标尺寸缩放；`pnpm run lint` 与 `tsc --noEmit` 通过，或明确记录阻塞原因。
+
+- `done` `FE-WORKPIECE-FLOW-063` `P0` `M2`
+  调整 Interface 流程口规则，使 workpiece 在工艺流程画布中不再暴露输入/输出口，仅作为被执行对象保留节点展示。
+  Acceptance Criteria: workpiece 节点不显示输入/输出流程口；其他设备仍保持流程口连线能力；`pnpm run lint` 与 `tsc --noEmit` 通过，或明确记录阻塞原因。
+
+- `done` `FE-FLOW-PORTS-062` `P0` `M2`
+  将 Interface 画布从设备真实接口展示调整为工艺流程输入/输出口展示，保留底层接口配置用于对齐与仿真参数映射。
+  Acceptance Criteria: Interface 节点仅展示输入/输出两个流程口；连接摘要与画布连线按流程口显示；执行计划仍可从流程口映射到底层真实接口；`pnpm run lint` 与 `tsc --noEmit` 通过，或明确记录阻塞原因。
+
 - `done` `FE-TRANSFORM-PERSIST-061` `P0` `M2`
   修复 3D 视口中切换选中模型后已移动设备归位到原点的问题，确保模型位姿在选择切换与控件显示切换时保持稳定。
   Acceptance Criteria: 移动模型后点击其他模型不会归位到原点；位姿在 store 中持续保留；视口 `lint` 与 `tsc --noEmit` 通过，或明确记录阻塞原因。

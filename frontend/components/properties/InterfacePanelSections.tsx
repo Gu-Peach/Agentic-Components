@@ -20,7 +20,7 @@ export function InterfaceToolbar({
       <span className='truncate'>
         {pendingLabel
           ? `Pending: ${pendingLabel}`
-          : 'Click one interface, then click another to connect'}
+          : 'Click one output port, then click an input port to connect'}
       </span>
       <div className='flex shrink-0 items-center gap-2'>
         <button

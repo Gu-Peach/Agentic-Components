@@ -11,6 +11,11 @@ import {
   mergeNodePositions,
   type NodePosition,
 } from '@/components/properties/interfaceCanvasLayout';
+import {
+  FLOW_INPUT_INTERFACE,
+  FLOW_OUTPUT_INTERFACE,
+  formatInterfaceName,
+} from '@/lib/interfaces/interfacePorts';
 import { buildInterfaceExecutionPlan } from '@/lib/interfaces/interfacePlan';
 import { formatConnection } from '@/components/properties/interfaceUtils';
 import { useSceneStore } from '@/stores/sceneStore';
@@ -77,9 +82,14 @@ export function InterfacePanel({ selectedDeviceId }: InterfacePanelProps) {
 
   function handleInterfaceClick(deviceId: string, point: InterfacePoint) {
     const label = point.displayName ?? point.name;
+    const nextPending = {
+      deviceId,
+      interfaceName: point.name,
+      label: `${deviceLabel(devices, deviceId)} / ${label}`,
+    };
 
     if (!pendingLink) {
-      setPendingLink({ deviceId, interfaceName: point.name, label });
+      setPendingLink(nextPending);
       return;
     }
 
@@ -88,18 +98,62 @@ export function InterfacePanel({ selectedDeviceId }: InterfacePanelProps) {
       return;
     }
 
-    updateInterfaceConnection(
-      pendingLink.deviceId,
-      pendingLink.interfaceName,
-      deviceId,
-      point.name,
+    if (pendingLink.deviceId === deviceId) {
+      appendLog('[Interface] Flow ports cannot connect within the same device.');
+      setPendingLink(null);
+      return;
+    }
+
+    if (pendingLink.interfaceName === point.name) {
+      appendLog('[Interface] Flow connections must link output to input.');
+      setPendingLink(null);
+      return;
+    }
+
+    const shouldKeepOrder =
+      pendingLink.interfaceName === FLOW_OUTPUT_INTERFACE
+      && point.name === FLOW_INPUT_INTERFACE;
+    const source = shouldKeepOrder ? pendingLink : nextPending;
+    const target = shouldKeepOrder ? nextPending : pendingLink;
+    const incoming = interfaceConnections.find(
+      (connection) =>
+        connection.targetDeviceId === target.deviceId
+        && connection.targetInterface === target.interfaceName,
     );
-    appendLog(`[Interface] ${pendingLink.label} -> ${label}`);
+
+    if (incoming) {
+      updateInterfaceConnection(incoming.sourceDeviceId, incoming.sourceInterface, '', '');
+    }
+
+    updateInterfaceConnection(
+      source.deviceId,
+      source.interfaceName,
+      target.deviceId,
+      target.interfaceName,
+    );
+    appendLog(`[Interface] ${source.label} -> ${target.label}`);
     setPendingLink(null);
   }
 
   function disconnect(deviceId: string, interfaceName: string) {
-    updateInterfaceConnection(deviceId, interfaceName, '', '');
+    const outgoing = interfaceConnections.find(
+      (connection) =>
+        connection.sourceDeviceId === deviceId && connection.sourceInterface === interfaceName,
+    );
+
+    if (outgoing) {
+      updateInterfaceConnection(deviceId, interfaceName, '', '');
+      return;
+    }
+
+    const incoming = interfaceConnections.find(
+      (connection) =>
+        connection.targetDeviceId === deviceId && connection.targetInterface === interfaceName,
+    );
+
+    if (incoming) {
+      updateInterfaceConnection(incoming.sourceDeviceId, incoming.sourceInterface, '', '');
+    }
   }
 
   return (
@@ -155,5 +209,13 @@ export function InterfacePanel({ selectedDeviceId }: InterfacePanelProps) {
 
 function pendingLabel(devices: SceneDevice[], deviceId: string, interfaceName: string) {
   const device = devices.find((item) => item.id === deviceId);
-  return `${device?.name ?? 'Unknown'} / ${interfaceName}`;
+  if (!device) {
+    return `Unknown / ${interfaceName}`;
+  }
+
+  return `${device.name} / ${formatInterfaceName(device, interfaceName)}`;
+}
+
+function deviceLabel(devices: SceneDevice[], deviceId: string) {
+  return devices.find((item) => item.id === deviceId)?.name ?? 'Unknown';
 }

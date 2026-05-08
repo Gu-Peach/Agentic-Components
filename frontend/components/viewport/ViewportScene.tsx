@@ -25,22 +25,21 @@ export function ViewportScene({
 
   return (
     <>
-      <color attach='background' args={['#d5d2cb']} />
-      <ambientLight intensity={1.25} />
-      <directionalLight intensity={2.4} position={[12, 14, 10]} castShadow />
-      <directionalLight intensity={0.7} position={[-8, 6, -4]} />
+      <color attach='background' args={['#ffffff']} />
+      <ambientLight intensity={0.5} />
+      <directionalLight intensity={1} position={[10, 10, 5]} castShadow />
       <Grid
         args={[60, 60]}
-        cellColor='#bdb8b0'
+        cellColor='#d4d4d4'
         cellSize={1}
         fadeDistance={50}
         fadeStrength={1}
-        sectionColor='#96908a'
+        sectionColor='#b8b8b8'
         sectionSize={5}
       />
       <mesh position={[0, -0.02, 0]} receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[60, 60]} />
-        <meshStandardMaterial color='#d0ccc4' />
+        <meshStandardMaterial color='#ffffff' />
       </mesh>
       {devices.map((device) => (
         <ModelInstance
@@ -55,7 +54,7 @@ export function ViewportScene({
       ))}
       <AgentSimulationAnimator />
       <OrbitControls ref={controlsRef} enableDamping makeDefault />
-      <Environment preset='warehouse' />
+      <Environment preset='sunset' />
     </>
   );
 }

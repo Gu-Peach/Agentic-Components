@@ -1,10 +1,9 @@
 import type { ExecutionPlan, ExecutionSegment, VectorPoint } from '@/lib/simulation/types';
 import type {
-  DeviceInterfaceConfig,
   InterfaceConnection,
-  InterfacePoint,
   SceneDevice,
 } from '@/types/scene';
+import { getDeviceInterfaces, resolveInterfacePoint } from '@/lib/interfaces/interfacePorts';
 
 const DEFAULT_SEGMENT_DURATION = 3;
 
@@ -38,8 +37,8 @@ function toExecutionSegment(
   const targetDevice = devices.find((device) => device.id === connection.targetDeviceId);
   if (!sourceDevice || !targetDevice) return null;
 
-  const sourcePoint = findInterfacePoint(sourceDevice, connection.sourceInterface);
-  const targetPoint = findInterfacePoint(targetDevice, connection.targetInterface);
+  const sourcePoint = resolveInterfacePoint(sourceDevice, connection.sourceInterface);
+  const targetPoint = resolveInterfacePoint(targetDevice, connection.targetInterface);
   const [start, end] = resolveSegmentWaypoints(
     sourceDevice,
     targetDevice,
@@ -63,15 +62,15 @@ function toExecutionSegment(
 function resolveSegmentWaypoints(
   sourceDevice: SceneDevice,
   targetDevice: SceneDevice,
-  sourcePoint: InterfacePoint | undefined,
-  targetPoint: InterfacePoint | undefined,
+  sourcePoint: ReturnType<typeof resolveInterfacePoint>,
+  targetPoint: ReturnType<typeof resolveInterfacePoint>,
 ): [VectorPoint, VectorPoint] {
   const transfer = sourceDevice.interfaceConfig?.transfer;
   const transferStart = transfer
-    ? findInterfacePoint(sourceDevice, transfer.from)
+    ? resolveInterfacePoint(sourceDevice, transfer.from)
     : undefined;
   const transferEnd = transfer
-    ? findInterfacePoint(sourceDevice, transfer.to)
+    ? resolveInterfacePoint(sourceDevice, transfer.to)
     : undefined;
   const start = toWorldPoint(sourceDevice, transferStart ?? sourcePoint)
     ?? fallbackPoint(sourceDevice);
@@ -84,14 +83,15 @@ function resolveSegmentWaypoints(
 
 function toDeviceConfig(device: SceneDevice) {
   const config = device.interfaceConfig;
+  const keyPoints = getDeviceInterfaces(device)
+    .filter((point) => point.origin)
+    .map((point) => ({ name: point.name, origin: point.origin as VectorPoint }));
 
   return {
     id: device.id,
     type: config?.type ?? device.type,
     rootNodeName: config?.rootNodeName,
-    keyPoints: config?.interfaces
-      ?.filter((point) => point.origin)
-      .map((point) => ({ name: point.name, origin: point.origin as VectorPoint })),
+    keyPoints,
     urdf: config?.urdf,
   };
 }
@@ -100,28 +100,9 @@ function resolveWorkpieceNodeName(devices: SceneDevice[]): string | undefined {
   return devices.find((device) => device.type === 'workpiece')?.interfaceConfig?.rootNodeName;
 }
 
-function findInterfacePoint(device: SceneDevice, interfaceName: string) {
-  const config = device.interfaceConfig;
-  if (!config) return undefined;
-  return config.interfaces?.find((point) => point.name === interfaceName)
-    ?? interfaceFromRobotConfig(config, interfaceName);
-}
-
-function interfaceFromRobotConfig(
-  config: DeviceInterfaceConfig,
-  interfaceName: string,
-): InterfacePoint | undefined {
-  if (!config.interface || config.interface.name !== interfaceName) return undefined;
-  return {
-    name: config.interface.name,
-    source: config.interface.jointName,
-    description: config.interface.description,
-  };
-}
-
 function toWorldPoint(
   device: SceneDevice,
-  point: InterfacePoint | undefined,
+  point: ReturnType<typeof resolveInterfacePoint>,
 ): VectorPoint | null {
   if (!point?.origin) return null;
   return {

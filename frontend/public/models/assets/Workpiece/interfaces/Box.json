@@ -2,7 +2,7 @@
   "templateVersion": 1,
   "type": "workpiece",
   "description": "简化版工件接口模板。顶部和底部接口都由场景自动从包围盒计算，不需要手动填写坐标。",
-  "rootNodeName": "",
+  "rootNodeName": "Box_00Ln",
   "interfaces": [
     {
       "name": "bottom",

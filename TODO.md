@@ -2,16 +2,49 @@
 
 ## 阶段目标
 
-- 当前阶段：Phase 1 - VC 接口模板铺设（M2）
-- 阶段周期：2026-05-07，1 天
-- 阶段目标：为 Conveyor / Robot / Workpiece 建立贴近 Visual Components 语义的内置接口模板，区分物理连接与字段传递连接，为后续场景装配、工件流转与抓取对齐机制打基础。
+- 当前阶段：Phase 1 - Interface 画布式工艺建模器（M2）
+- 阶段周期：2026-05-08，1 天
+- 阶段目标：将 Interface 页签调整为类似知识图谱/工艺流程图的编辑画布，设备以紧凑小面板展示，接口以小方框呈现，并支持放大整个 Interface 工作区进行连接编辑。
 - 验收标准：
-  - `assets/Conveyor`、`assets/Robot`、`assets/Workpiece` 均存在接口模板
-  - 模板覆盖 conveyor 入口/出口、robot 抓取点、workpiece 顶/底接口
-  - 模板预留字段传递通道，能够表达 Flow / ToolExport / 支撑与抓取参考系
-  - `pnpm run lint` 通过，或明确记录阻塞原因
+  - Interface 页签内设备以多个紧凑小面板展示，而不是占满空间的大面板
+  - 接口名称以小方框显示在设备面板边缘
+  - 点击接口可手动建立设备间连接，连接以线条显示
+  - 放大功能作用于整个 Interface 工作区并居中显示
+  - `pnpm run lint` 与 `tsc --noEmit` 通过，或明确记录阻塞原因
 
 ## 当前阶段任务清单
+
+- `done` `FE-TRANSFORM-PERSIST-061` `P0` `M2`
+  修复 3D 视口中切换选中模型后已移动设备归位到原点的问题，确保模型位姿在选择切换与控件显示切换时保持稳定。
+  Acceptance Criteria: 移动模型后点击其他模型不会归位到原点；位姿在 store 中持续保留；视口 `lint` 与 `tsc --noEmit` 通过，或明确记录阻塞原因。
+
+- `done` `FE-INTERFACE-DRAG-060` `P0` `M2`
+  为 Interface 画布中的设备小面板增加拖拽排布能力，并整理面板代码结构，确保拖动后连线实时跟随且文件长度保持在仓库规范内。
+  Acceptance Criteria: 设备小面板可在画布内拖动；拖动后接口连线实时更新；普通视图与放大视图共享同一套排布位置；相关 TSX 文件不超过 200 行；`pnpm run lint` 与 `tsc --noEmit` 通过，或明确记录阻塞原因。
+
+- `done` `FE-REACT-KEY-059` `P0` `M2`
+  修复连续加载多个模型时视口徽标出现重复 React key 的问题，避免每增加一个模型就在页面控制台新增一条重复 key 报错。
+  Acceptance Criteria: 连续加载多个模型后不再出现 “Encountered two children with the same key” 报错；场景标题不与模型数量徽标冲突；`pnpm run lint` 与 `tsc --noEmit` 通过，或明确记录阻塞原因。
+
+- `done` `FE-INTERFACE-CANVAS-058` `P0` `M2`
+  将 Interface 面板重构为画布式工艺建模器，小设备面板在画布内排列，接口以小方框展示，并支持整体画布放大编辑。
+  Acceptance Criteria: 设备面板紧凑展示；接口小方框可点击连线；连接线可见；整体工作区可放大；lint/typecheck 通过或记录原因。
+
+- `done` `FE-INTERFACE-MODELER-057` `P0` `M2`
+  将 Interface 面板改为多个可放大设备卡片，并支持点击接口完成手动连线，以便进行工艺路径建模。
+  Acceptance Criteria: 小面板可展示设备接口；可放大到屏幕中央；点击接口能建立连接；连接摘要可见；lint/typecheck 通过或记录原因。
+
+- `done` `FE-INTERFACE-GRAPH-056` `P0` `M2`
+  将 Interface 面板调整为设备块图形化展示，并修正组件模型加载位置从自动平铺改为默认原点。
+  Acceptance Criteria: Interface tab 有图形化设备块与连接关系展示；接口编辑仍可用；新加载 component 默认在原点；lint/typecheck 通过或记录原因。
+
+- `done` `FE-INTERFACE-PANEL-055` `P0` `M2`
+  新增 Properties Interface 页签，接入具体模型接口配置，展示场景设备接口并支持编辑物料流转路径连接。
+  Acceptance Criteria: catalog 返回接口配置路径；scene store 加载并保存接口配置与连接；Interface tab 可编辑连接；workpiece 类型正常展示；`pnpm run lint` 通过或记录原因。
+
+- `done` `FE-VC-INTERFACE-054` `P0` `M2`
+  按场景功能优先的要求重写 Conveyor / Robot / Workpiece 接口标准文件，弱化复杂字段建模，保留后续动画与连接机制所需的最小信息集。
+  Acceptance Criteria: robot 模板与 `robot_arm` 关节定义风格一致且默认 `joint_6` 为接口；workpiece 模板仅保留顶部/底部接口与自动包围盒说明；conveyor 模板保留手动定义的 entry/exit；`pnpm run lint` 通过或记录原因。
 
 - `done` `FE-VC-INTERFACE-053` `P0` `M2`
   为 Conveyor / Robot / Workpiece 补充 VC 风格内置接口模板，区分物理连接接口与字段传递接口，并将模板收纳到各资产类别的 `interfaces/` 子目录中，为后续接口机制实现做准备。

@@ -18,6 +18,7 @@ export type CatalogDevice = {
   category?: string;
   objectPath: string;
   modelUrl: string;
+  interfaceUrl?: string;
   updatedAt?: string;
 };
 

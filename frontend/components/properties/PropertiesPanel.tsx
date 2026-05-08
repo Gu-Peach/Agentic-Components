@@ -3,70 +3,16 @@
 import { useMemo, useState } from 'react';
 import { Lock, MapPin, Tag } from 'lucide-react';
 import { useSceneStore } from '@/stores/sceneStore';
+import { InterfacePanel } from '@/components/properties/InterfacePanel';
+import { defaultFields, simulationFields } from '@/components/properties/propertyFields';
 
 const coordinateModes = ['World', 'Parent', 'Local'] as const;
-
-const defaultFields = {
-  robot: [
-    ['Name', 'ARC-2000i #2'],
-    ['Material', 'dark_grey'],
-    ['Visible', 'Enabled'],
-    ['BOM', 'Visual Components ARC-2000i'],
-    ['Category', 'Robots'],
-    ['Axis1', '0'],
-    ['Axis2', '-22.584'],
-    ['Axis3', '27.359'],
-    ['Axis4', '0'],
-    ['Axis5', '50.226'],
-    ['Axis6', '0'],
-  ],
-  conveyor: [
-    ['Name', 'Conveyor Feed 01'],
-    ['Length', '1000'],
-    ['Width', '600'],
-    ['Height', '800'],
-    ['Speed', '200 mm/s'],
-  ],
-  lift: [
-    ['Name', 'Lift Shuttle 01'],
-    ['nodeName', 'LiftNode'],
-    ['carrierNodeName', 'Carrier_00'],
-    ['Speed', '0.5 m/s'],
-  ],
-  storage: [
-    ['Name', 'Storage Rack A'],
-    ['Cells', '8'],
-    ['Allocation', 'FIFO'],
-  ],
-} as const;
-
-const simulationFields = {
-  robot: [
-    ['Executor', 'Executor'],
-    ['Workspace', 'WorkSpace'],
-    ['Signal Action', 'SignalAction'],
-    ['PDF Export Level', 'Complete'],
-    ['Simulation Level', 'Detailed'],
-  ],
-  conveyor: [
-    ['StartOffset', '0'],
-    ['EndOffset', '0'],
-  ],
-  lift: [
-    ['rootAxis', 'x'],
-    ['carrierAxis', 'y'],
-    ['rootRange', '-4.142 ~ 0.858'],
-    ['carrierRange', '0.185 ~ 3.160'],
-  ],
-  storage: [
-    ['cells', 'A1 ~ A8'],
-    ['allocation', 'FIFO'],
-  ],
-} as const;
+const tabs = ['default', 'simulation', 'interface'] as const;
+type PropertiesTab = (typeof tabs)[number];
 
 export function PropertiesPanel() {
   const { devices, selectedDeviceId } = useSceneStore();
-  const [activeTab, setActiveTab] = useState<'default' | 'simulation'>('default');
+  const [activeTab, setActiveTab] = useState<PropertiesTab>('default');
   const [coordinateMode, setCoordinateMode] =
     useState<(typeof coordinateModes)[number]>('World');
   const selected =
@@ -79,7 +25,9 @@ export function PropertiesPanel() {
 
     return activeTab === 'default'
       ? defaultFields[selected.type]
-      : simulationFields[selected.type];
+      : activeTab === 'simulation'
+        ? simulationFields[selected.type]
+        : [];
   }, [activeTab, selected]);
 
   return (
@@ -133,43 +81,39 @@ export function PropertiesPanel() {
             </div>
           </div>
           <div className='flex border-b border-[var(--border-soft)] text-sm'>
-            <button
-              className={`flex-1 border-r border-[var(--border-soft)] px-3 py-2 ${
-                activeTab === 'default'
-                  ? 'bg-[var(--bg-panel-hover)] text-[var(--text-primary)]'
-                  : 'text-[var(--text-secondary)]'
-              }`}
-              onClick={() => setActiveTab('default')}
-              type='button'
-            >
-              Default
-            </button>
-            <button
-              className={`flex-1 px-3 py-2 ${
-                activeTab === 'simulation'
-                  ? 'bg-[var(--bg-panel-hover)] text-[var(--text-primary)]'
-                  : 'text-[var(--text-secondary)]'
-              }`}
-              onClick={() => setActiveTab('simulation')}
-              type='button'
-            >
-              Simulation
-            </button>
+            {tabs.map((tab) => (
+              <button
+                key={tab}
+                className={`flex-1 border-r border-[var(--border-soft)] px-3 py-2 capitalize last:border-r-0 ${
+                  activeTab === tab
+                    ? 'bg-[var(--bg-panel-hover)] text-[var(--text-primary)]'
+                    : 'text-[var(--text-secondary)]'
+                }`}
+                onClick={() => setActiveTab(tab)}
+                type='button'
+              >
+                {tab}
+              </button>
+            ))}
           </div>
           <div className='flex-1 overflow-auto px-3 py-3'>
-            <div className='space-y-px border border-[var(--border-strong)] bg-[var(--border-strong)]'>
-              {parameterRows.map(([label, value]) => (
-                <div
-                  key={label}
-                  className='grid grid-cols-[120px_1fr] items-center bg-[var(--bg-panel)] text-sm'
-                >
-                  <div className='px-3 py-2 text-[var(--text-secondary)]'>{label}</div>
-                  <div className='border-l border-[var(--border-strong)] bg-[var(--bg-input)] px-2 py-1.5 text-[var(--text-dark)]'>
-                    {value}
+            {activeTab === 'interface' ? (
+              <InterfacePanel selectedDeviceId={selected.id} />
+            ) : (
+              <div className='space-y-px border border-[var(--border-strong)] bg-[var(--border-strong)]'>
+                {parameterRows.map(([label, value]) => (
+                  <div
+                    key={label}
+                    className='grid grid-cols-[120px_1fr] items-center bg-[var(--bg-panel)] text-sm'
+                  >
+                    <div className='px-3 py-2 text-[var(--text-secondary)]'>{label}</div>
+                    <div className='border-l border-[var(--border-strong)] bg-[var(--bg-input)] px-2 py-1.5 text-[var(--text-dark)]'>
+                      {value}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </>
       ) : (

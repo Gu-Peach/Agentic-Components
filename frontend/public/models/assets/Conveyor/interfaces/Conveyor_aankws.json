@@ -2,20 +2,20 @@
   "templateVersion": 1,
   "type": "conveyor",
   "description": "简化版传送带接口模板。入口和出口坐标由用户手动定义，工件内容默认沿 entry -> exit 流转。",
-  "rootNodeName": "",
+  "rootNodeName": "Conveyor(1)",
   "interfaces": [
     {
       "name": "entry",
       "displayName": "入口",
       "direction": "in",
-      "origin": { "x": 0, "y": 0, "z": 0 },
+      "origin": { "x": -0.699, "y": 0.700, "z": 0.250 },
       "description": "传送带接收工件的起点接口，坐标需手动填写。"
     },
     {
       "name": "exit",
       "displayName": "出口",
       "direction": "out",
-      "origin": { "x": 0, "y": 0, "z": 0 },
+      "origin": { "x": 0.701, "y": 0.700, "z": 0.250 },
       "description": "传送带输出工件的终点接口，坐标需手动填写。"
     }
   ],

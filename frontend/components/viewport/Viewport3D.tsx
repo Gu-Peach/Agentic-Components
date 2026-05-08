@@ -33,9 +33,9 @@ export function Viewport3D() {
   return (
     <section className='relative h-full overflow-hidden bg-[#d5d2cb]'>
       <div className='absolute left-6 top-6 z-10 flex gap-2'>
-        {sceneBadges.map((badge) => (
+        {sceneBadges.map((badge, index) => (
           <span
-            key={badge}
+            key={`${index}-${badge}`}
             className='border border-[rgba(0,0,0,0.12)] bg-[rgba(255,255,255,0.65)] px-2 py-1 text-xs text-[#444]'
           >
             {badge}

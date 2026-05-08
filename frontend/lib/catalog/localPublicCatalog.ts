@@ -1,11 +1,7 @@
 import { access, readdir, stat } from 'node:fs/promises';
 import { constants as fsConstants } from 'node:fs';
 import { basename, join, posix } from 'node:path';
-import type {
-  CatalogCategory,
-  CatalogDevice,
-  PublicCatalogResponse,
-} from '@/types/catalog';
+import type { CatalogCategory, CatalogDevice, PublicCatalogResponse } from '@/types/catalog';
 import type { DeviceType } from '@/types/scene';
 
 const PUBLIC_ROOT_CANDIDATES = ['public', 'frontend/public'];
@@ -33,6 +29,9 @@ function normalizeDeviceType(name: string): DeviceType {
   const lowerName = name.toLowerCase();
   if (lowerName.includes('conveyor')) {
     return 'conveyor';
+  }
+  if (lowerName.includes('workpiece') || lowerName.includes('box')) {
+    return 'workpiece';
   }
   if (lowerName.includes('lift')) {
     return 'lift';
@@ -63,17 +62,16 @@ async function resolveFirstExistingPath(candidates: string[]): Promise<string> {
 }
 
 async function resolveCatalogPaths(): Promise<ResolvedCatalogPaths> {
-  const publicRoot = await resolveFirstExistingPath(
-    PUBLIC_ROOT_CANDIDATES.map((candidate) => join(process.cwd(), candidate)),
-  );
+  const publicRootCandidates = PUBLIC_ROOT_CANDIDATES.map((item) => join(process.cwd(), item));
+  const publicRoot = await resolveFirstExistingPath(publicRootCandidates);
   const modelRootPath = await resolveFirstExistingPath(
-    MODEL_ROOT_CANDIDATES.map((candidate) => join(publicRoot, candidate)),
+    MODEL_ROOT_CANDIDATES.map((item) => join(publicRoot, item)),
   );
   const componentsDirPath = await resolveFirstExistingPath(
-    COMPONENTS_DIR_CANDIDATES.map((candidate) => join(modelRootPath, candidate)),
+    COMPONENTS_DIR_CANDIDATES.map((item) => join(modelRootPath, item)),
   );
   const layoutsDirPath = await resolveFirstExistingPath(
-    LAYOUTS_DIR_CANDIDATES.map((candidate) => join(modelRootPath, candidate)),
+    LAYOUTS_DIR_CANDIDATES.map((item) => join(modelRootPath, item)),
   );
 
   return {
@@ -105,6 +103,32 @@ async function readSubdirectories(directoryPath: string): Promise<string[]> {
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
     .sort((left, right) => left.localeCompare(right));
+}
+
+async function resolveInterfaceUrl(
+  root: ResolvedCatalogPaths,
+  category: string,
+  fileName: string,
+): Promise<string | undefined> {
+  const interfaceDirPath = join(root.modelRootPath, root.componentsDirName, category, 'interfaces');
+
+  if (!(await pathExists(interfaceDirPath))) {
+    return undefined;
+  }
+
+  const interfaceFiles = await readModelFiles(interfaceDirPath);
+  const modelKey = normalizeMatchKey(stripExtension(fileName));
+  const match = interfaceFiles.find(
+    (interfaceFile) => normalizeMatchKey(stripExtension(interfaceFile)) === modelKey,
+  );
+
+  return match
+    ? posix.join(root.modelRootUrl, root.componentsDirName, category, 'interfaces', match)
+    : undefined;
+}
+
+function normalizeMatchKey(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, '');
 }
 
 async function getUpdatedAt(path: string): Promise<string | undefined> {
@@ -142,6 +166,7 @@ async function toComponentDevice(
 ): Promise<CatalogDevice> {
   const objectPath = posix.join(root.modelRootUrl, root.componentsDirName, category, fileName);
   const absolutePath = join(root.modelRootPath, root.componentsDirName, category, fileName);
+  const interfaceUrl = await resolveInterfaceUrl(root, category, fileName);
 
   return {
     id: `component:${category}:${fileName}`,
@@ -152,6 +177,7 @@ async function toComponentDevice(
     category,
     objectPath,
     modelUrl: objectPath,
+    interfaceUrl,
     updatedAt: await getUpdatedAt(absolutePath),
   };
 }

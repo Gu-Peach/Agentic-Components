@@ -34,48 +34,50 @@ export function ModelInstance({
   transformMode,
 }: ModelInstanceProps) {
   const groupRef = useRef<ThreeGroup>(null);
-  const content = (
-    <group
-      ref={groupRef}
-      position={device.transform.position}
-      rotation={toRadians(device.transform.rotation)}
-      scale={device.transform.scale}
-    >
-      <ModelAsset
-        device={device}
-        isSelected={isSelected}
-        onSelect={onSelect}
-      />
-    </group>
-  );
 
-  if (!isSelected) {
-    return content;
+  function commitTransform() {
+    if (groupRef.current) {
+      onTransformCommit(device.id, transformFromObject(groupRef.current));
+    }
   }
 
   return (
-    <TransformControls
-      mode={transformMode}
-      onMouseDown={() => {
-        const controls = controlsRef.current;
+    <>
+      <group
+        ref={groupRef}
+        position={device.transform.position}
+        rotation={toRadians(device.transform.rotation)}
+        scale={device.transform.scale}
+      >
+        <ModelAsset
+          device={device}
+          isSelected={isSelected}
+          onSelect={onSelect}
+        />
+      </group>
+      {isSelected ? (
+        <TransformControls
+          mode={transformMode}
+          object={groupRef}
+          onMouseDown={() => {
+            const controls = controlsRef.current;
 
-        if (controls) {
-          controls.enabled = false;
-        }
-      }}
-      onMouseUp={() => {
-        const controls = controlsRef.current;
+            if (controls) {
+              controls.enabled = false;
+            }
+          }}
+          onMouseUp={() => {
+            const controls = controlsRef.current;
 
-        if (controls) {
-          controls.enabled = true;
-        }
+            if (controls) {
+              controls.enabled = true;
+            }
 
-        if (groupRef.current) {
-          onTransformCommit(device.id, transformFromObject(groupRef.current));
-        }
-      }}
-    >
-      {content}
-    </TransformControls>
+            commitTransform();
+          }}
+          onObjectChange={commitTransform}
+        />
+      ) : null}
+    </>
   );
 }

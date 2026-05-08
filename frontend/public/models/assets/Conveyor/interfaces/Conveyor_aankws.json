@@ -8,14 +8,14 @@
       "name": "entry",
       "displayName": "入口",
       "direction": "in",
-      "origin": { "x": -0.699, "y": 0.700, "z": 0.250 },
+      "origin": { "x": -0.699, "y": 0.700, "z": 0.0 },
       "description": "传送带接收工件的起点接口，坐标需手动填写。"
     },
     {
       "name": "exit",
       "displayName": "出口",
       "direction": "out",
-      "origin": { "x": 0.701, "y": 0.700, "z": 0.250 },
+      "origin": { "x": 0.701, "y": 0.700, "z": 0.0 },
       "description": "传送带输出工件的终点接口，坐标需手动填写。"
     }
   ],

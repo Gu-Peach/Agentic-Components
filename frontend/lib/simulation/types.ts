@@ -44,6 +44,7 @@ export type ExecutionSegment = {
   planned_start: number;
   planned_end: number;
   waypoints: VectorPoint[];
+  placementTarget?: VectorPoint;
   motionData?: {
     rootOffset?: number;
     carrierOffset?: number;

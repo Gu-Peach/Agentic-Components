@@ -5,21 +5,24 @@ import { Lock, MapPin, Tag } from 'lucide-react';
 import { useSceneStore } from '@/stores/sceneStore';
 import { InterfacePanel } from '@/components/properties/InterfacePanel';
 import { defaultFields } from '@/components/properties/propertyFields';
+import { SimulationInterfaceTable } from '@/components/simulation/SimulationInterfaceTable';
 import {
   getInterfaceCoordinate,
   type InterfaceCoordinateMode,
 } from '@/lib/interfaces/interfaceCoordinates';
 import { getDeviceInterfaces } from '@/lib/interfaces/interfacePorts';
+import { useInterfaceHighlightStore } from '@/stores/interfaceHighlightStore';
 
 const coordinateModes = ['World', 'Parent', 'Local'] as const;
 const tabs = ['default', 'simulation', 'interface'] as const;
 type PropertiesTab = (typeof tabs)[number];
+type InterfaceRow = { label: string; value: string; interfaceName: string };
 
 export function PropertiesPanel() {
   const { devices, selectedDeviceId } = useSceneStore();
+  const { activeHighlight, toggleHighlight } = useInterfaceHighlightStore();
   const [activeTab, setActiveTab] = useState<PropertiesTab>('default');
-  const [coordinateMode, setCoordinateMode] =
-    useState<InterfaceCoordinateMode>('World');
+  const [coordinateMode, setCoordinateMode] = useState<InterfaceCoordinateMode>('World');
   const selected =
     devices.find((device) => device.id === selectedDeviceId) ?? devices[0];
 
@@ -27,21 +30,23 @@ export function PropertiesPanel() {
     if (!selected) {
       return [] as readonly (readonly [string, string])[];
     }
-
     return activeTab === 'default' ? defaultFields[selected.type] : [];
   }, [activeTab, selected]);
-  const interfaceRows = useMemo(() => {
+  const interfaceRows = useMemo<readonly InterfaceRow[]>(() => {
     if (!selected || activeTab !== 'simulation') {
-      return [] as readonly (readonly [string, string])[];
+      return [];
     }
-
     return getDeviceInterfaces(selected).map((point) => {
       const coordinate = getInterfaceCoordinate(selected, point, coordinateMode);
       const label = point.displayName ?? point.name;
       const value = coordinate
         ? `X ${coordinate.x} | Y ${coordinate.y} | Z ${coordinate.z}`
         : 'Unavailable';
-      return [label, value] as const;
+      return {
+        label,
+        value,
+        interfaceName: point.name,
+      };
     });
   }, [activeTab, coordinateMode, selected]);
 
@@ -122,7 +127,15 @@ export function PropertiesPanel() {
                     <div className='text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]'>
                       Interface Coordinates
                     </div>
-                    <PropertyTable rows={interfaceRows} />
+                    <SimulationInterfaceTable
+                      activeInterfaceName={
+                        activeHighlight?.deviceId === selected.id
+                          ? activeHighlight.interfaceName
+                          : null
+                      }
+                      onRowClick={(interfaceName) => toggleHighlight(selected.id, interfaceName)}
+                      rows={interfaceRows}
+                    />
                   </div>
                 ) : null}
               </div>

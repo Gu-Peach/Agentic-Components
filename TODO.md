@@ -14,6 +14,26 @@
 
 ## 当前阶段任务清单
 
+- `done` `FE-IK-BEHAVIOR-PARITY-075` `P0` `M2`
+  对齐 behavior 中已验证的机械臂 IK 执行语义：计划只提供业务轨迹点，运行时读取真实末端位置并补入轨迹前缀；同时确保场景中出现传送带动作时始终执行完整 entry -> exit 传送。
+  Acceptance Criteria: robot 段计划轨迹为物料当前顶部接口点到下游入口上方；运行时使用真实 end effector 当前位置作为 IK 起点；物块仅在到达顶部接口点后绑定；无连接的单传送带场景也能播放 entry -> exit；`pnpm run lint` 与 `tsc --noEmit` 通过，或明确记录阻塞原因。
+- `done` `FE-ROBOT-IK-074` `P0` `M2`
+  修正 Interface 动画中机械臂抓取段的 IK 轨迹，使机器人不再在段开始时直接跳到抓取点，而是从当前末端位置连续运动到物块顶部接口，再搬运至下游入口上方，并仅在到达抓取点后绑定物块。
+  Acceptance Criteria: robot 段包含“当前 tool point -> 物块 top -> 目标入口上方”的连续 IK 轨迹；物块仅在机械臂到达抓取点后才绑定；视觉上可观察到机械臂各关节的连续联动；`pnpm run lint` 与 `tsc --noEmit` 通过，或明确记录阻塞原因。
+- `done` `FE-FLOW-TERMINAL-073` `P0` `M2`
+  调整 Interface 动画末端执行规则：末端传送带即使没有后续连接也要继续完成自身传送；机器人抓取改为末端先到物块顶部接口，再移动到下游入口上方固定高度后解除绑定，并由系统将物块底部对齐到下游入口。
+  Acceptance Criteria: 末端 conveyor 在无后续连接时仍会执行 entry -> exit 传送；robot 段起点使用物块顶部接口坐标；robot 段终点为下游入口上方固定高度，段结束时物块底部落到下游入口；`pnpm run lint` 与 `tsc --noEmit` 通过，或明确记录阻塞原因。
+- `done` `FE-ROBOT-PLACE-072` `P0` `M2`
+  补全 Interface 动画中机器人放置物块的后半段规则，使机械臂在搬运后先移动到下一个设备入口接口上方固定高度，再将物块底部对齐到目标入口坐标。
+  Acceptance Criteria: `robot -> downstream device` 执行段包含“目标入口上方”过渡点；机器人段结束时物块底部会放置到下游入口坐标；最后一个传送带即使没有后续连接也不影响机械臂完成放置；`pnpm run lint` 与 `tsc --noEmit` 通过，或明确记录阻塞原因。
+- `done` `FE-FLOW-EXEC-071` `P0` `M2`
+  修复 Interface 动画执行链中机器人后半段缺失的问题，使流程至少能完整表现“传送带输送 -> 机械臂携带物块 -> 放至下一个设备位置”。
+  Acceptance Criteria: 机器人段不再只抓取不搬运；机器人段起点可继承上游设备交接位置；`pnpm run lint` 与 `tsc --noEmit` 通过，或明确记录阻塞原因。
+
+- `done` `FE-INTERFACE-VIZ-070` `P0` `M2`
+  支持从 Simulation 面板点击接口并在 3D 场景中可视化该接口位置，便于核对接口提取结果与当前世界坐标。
+  Acceptance Criteria: 点击接口行后场景中出现对应接口标记；再次点击可取消高亮；标记位置随设备变换保持正确；`pnpm run lint` 与 `tsc --noEmit` 通过，或明确记录阻塞原因。
+
 - `done` `FE-ANCHOR-LOOP-069` `P0` `M2`
   修复机械臂锚点自动提取引入的状态回写循环，避免视口渲染阶段重复 setState 导致 Maximum update depth exceeded。
   Acceptance Criteria: 页面不再出现 Maximum update depth exceeded；机械臂锚点仍能正常提取；`pnpm run lint` 与 `tsc --noEmit` 通过，或明确记录阻塞原因。

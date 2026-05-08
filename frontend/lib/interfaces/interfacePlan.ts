@@ -1,20 +1,28 @@
 import type { ExecutionPlan, ExecutionSegment, VectorPoint } from '@/lib/simulation/types';
-import type {
-  InterfaceConnection,
-  SceneDevice,
-} from '@/types/scene';
-import { getInterfaceCoordinate } from '@/lib/interfaces/interfaceCoordinates';
+import type { InterfaceConnection, SceneDevice } from '@/types/scene';
 import { getDeviceInterfaces, resolveInterfacePoint } from '@/lib/interfaces/interfacePorts';
+import {
+  addPoint,
+  buildTerminalSegments,
+  fallbackPoint,
+  resolveOutgoingHandoffPoint,
+  resolvePlacementTarget,
+  resolveWorkpieceGripOffset,
+  toWorldPoint,
+} from '@/lib/interfaces/interfacePlanHelpers';
 
 const DEFAULT_SEGMENT_DURATION = 3;
+const ROBOT_APPROACH_HEIGHT = 0.1;
 
 export function buildInterfaceExecutionPlan(
   devices: SceneDevice[],
   connections: InterfaceConnection[],
 ): ExecutionPlan | null {
-  const segments = connections
-    .map((connection, index) => toExecutionSegment(devices, connection, index))
+  const primarySegments = connections
+    .map((connection, index) => toExecutionSegment(devices, connections, connection, index))
     .filter((segment): segment is ExecutionSegment => Boolean(segment));
+  const terminalSegments = buildTerminalSegments(devices, connections, primarySegments.length);
+  const segments = [...primarySegments, ...terminalSegments];
 
   if (!segments.length) {
     return null;
@@ -31,6 +39,7 @@ export function buildInterfaceExecutionPlan(
 
 function toExecutionSegment(
   devices: SceneDevice[],
+  connections: InterfaceConnection[],
   connection: InterfaceConnection,
   index: number,
 ): ExecutionSegment | null {
@@ -40,13 +49,17 @@ function toExecutionSegment(
 
   const sourcePoint = resolveInterfacePoint(sourceDevice, connection.sourceInterface);
   const targetPoint = resolveInterfacePoint(targetDevice, connection.targetInterface);
-  const [start, end] = resolveSegmentWaypoints(
+  const waypoints = resolveSegmentWaypoints(
+    devices,
+    connections,
     sourceDevice,
     targetDevice,
     sourcePoint,
     targetPoint,
+    connection,
   );
   const plannedStart = index * DEFAULT_SEGMENT_DURATION;
+  const placementTarget = resolvePlacementTarget(targetDevice, targetPoint);
 
   return {
     id: `interface-flow-${index + 1}`,
@@ -56,16 +69,20 @@ function toExecutionSegment(
     algorithm: sourceDevice.type === 'robot' ? 'robot_arm_ik' : 'conveyor_linear',
     planned_start: plannedStart,
     planned_end: plannedStart + DEFAULT_SEGMENT_DURATION,
-    waypoints: [start, end],
+    waypoints,
+    placementTarget: sourceDevice.type === 'robot' ? placementTarget : undefined,
   };
 }
 
 function resolveSegmentWaypoints(
+  devices: SceneDevice[],
+  connections: InterfaceConnection[],
   sourceDevice: SceneDevice,
   targetDevice: SceneDevice,
   sourcePoint: ReturnType<typeof resolveInterfacePoint>,
   targetPoint: ReturnType<typeof resolveInterfacePoint>,
-): [VectorPoint, VectorPoint] {
+  connection: InterfaceConnection,
+): VectorPoint[] {
   const transfer = sourceDevice.interfaceConfig?.transfer;
   const transferStart = transfer
     ? resolveInterfacePoint(sourceDevice, transfer.from)
@@ -73,13 +90,58 @@ function resolveSegmentWaypoints(
   const transferEnd = transfer
     ? resolveInterfacePoint(sourceDevice, transfer.to)
     : undefined;
+  const robotPickupPoint = resolveRobotPickupPoint(
+    devices,
+    connections,
+    sourceDevice,
+    connection,
+  );
   const start = toWorldPoint(sourceDevice, transferStart ?? sourcePoint)
     ?? fallbackPoint(sourceDevice);
-  const end = toWorldPoint(sourceDevice, transferEnd)
-    ?? toWorldPoint(targetDevice, targetPoint)
-    ?? fallbackPoint(targetDevice);
+  const placementTarget = resolvePlacementTarget(targetDevice, targetPoint);
+  const end = toWorldPoint(sourceDevice, transferEnd) ?? placementTarget;
+
+  if (sourceDevice.type === 'robot') {
+    return [
+      robotPickupPoint ?? start,
+      liftPoint(placementTarget),
+    ];
+  }
 
   return [start, end];
+}
+
+function resolveRobotPickupPoint(
+  devices: SceneDevice[],
+  connections: InterfaceConnection[],
+  sourceDevice: SceneDevice,
+  currentConnection: InterfaceConnection,
+) {
+  if (sourceDevice.type !== 'robot') {
+    return null;
+  }
+
+  const incomingConnection = connections.find(
+    (connection) =>
+      connection.targetDeviceId === sourceDevice.id && connection.id !== currentConnection.id,
+  );
+  if (!incomingConnection) {
+    return null;
+  }
+
+  const incomingSourceDevice = devices.find(
+    (device) => device.id === incomingConnection.sourceDeviceId,
+  );
+  if (!incomingSourceDevice) {
+    return null;
+  }
+
+  const handoffPoint = resolveOutgoingHandoffPoint(incomingSourceDevice, incomingConnection);
+  const workpieceGripOffset = resolveWorkpieceGripOffset(devices);
+
+  return handoffPoint && workpieceGripOffset
+    ? addPoint(handoffPoint, workpieceGripOffset)
+    : handoffPoint;
 }
 
 function toDeviceConfig(device: SceneDevice) {
@@ -101,17 +163,10 @@ function resolveWorkpieceNodeName(devices: SceneDevice[]): string | undefined {
   return devices.find((device) => device.type === 'workpiece')?.interfaceConfig?.rootNodeName;
 }
 
-function toWorldPoint(
-  device: SceneDevice,
-  point: ReturnType<typeof resolveInterfacePoint>,
-): VectorPoint | null {
-  return point ? getInterfaceCoordinate(device, point, 'World') : null;
-}
-
-function fallbackPoint(device: SceneDevice): VectorPoint {
+function liftPoint(point: VectorPoint): VectorPoint {
   return {
-    x: device.transform.position[0],
-    y: device.transform.position[1],
-    z: device.transform.position[2],
+    x: point.x,
+    y: point.y + ROBOT_APPROACH_HEIGHT,
+    z: point.z,
   };
 }

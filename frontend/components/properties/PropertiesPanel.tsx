@@ -4,7 +4,12 @@ import { useMemo, useState } from 'react';
 import { Lock, MapPin, Tag } from 'lucide-react';
 import { useSceneStore } from '@/stores/sceneStore';
 import { InterfacePanel } from '@/components/properties/InterfacePanel';
-import { defaultFields, simulationFields } from '@/components/properties/propertyFields';
+import { defaultFields } from '@/components/properties/propertyFields';
+import {
+  getInterfaceCoordinate,
+  type InterfaceCoordinateMode,
+} from '@/lib/interfaces/interfaceCoordinates';
+import { getDeviceInterfaces } from '@/lib/interfaces/interfacePorts';
 
 const coordinateModes = ['World', 'Parent', 'Local'] as const;
 const tabs = ['default', 'simulation', 'interface'] as const;
@@ -14,7 +19,7 @@ export function PropertiesPanel() {
   const { devices, selectedDeviceId } = useSceneStore();
   const [activeTab, setActiveTab] = useState<PropertiesTab>('default');
   const [coordinateMode, setCoordinateMode] =
-    useState<(typeof coordinateModes)[number]>('World');
+    useState<InterfaceCoordinateMode>('World');
   const selected =
     devices.find((device) => device.id === selectedDeviceId) ?? devices[0];
 
@@ -23,12 +28,22 @@ export function PropertiesPanel() {
       return [] as readonly (readonly [string, string])[];
     }
 
-    return activeTab === 'default'
-      ? defaultFields[selected.type]
-      : activeTab === 'simulation'
-        ? simulationFields[selected.type]
-        : [];
+    return activeTab === 'default' ? defaultFields[selected.type] : [];
   }, [activeTab, selected]);
+  const interfaceRows = useMemo(() => {
+    if (!selected || activeTab !== 'simulation') {
+      return [] as readonly (readonly [string, string])[];
+    }
+
+    return getDeviceInterfaces(selected).map((point) => {
+      const coordinate = getInterfaceCoordinate(selected, point, coordinateMode);
+      const label = point.displayName ?? point.name;
+      const value = coordinate
+        ? `X ${coordinate.x} | Y ${coordinate.y} | Z ${coordinate.z}`
+        : 'Unavailable';
+      return [label, value] as const;
+    });
+  }, [activeTab, coordinateMode, selected]);
 
   return (
     <aside className='flex h-full flex-col bg-[var(--bg-panel)]'>
@@ -100,18 +115,16 @@ export function PropertiesPanel() {
             {activeTab === 'interface' ? (
               <InterfacePanel selectedDeviceId={selected.id} />
             ) : (
-              <div className='space-y-px border border-[var(--border-strong)] bg-[var(--border-strong)]'>
-                {parameterRows.map(([label, value]) => (
-                  <div
-                    key={label}
-                    className='grid grid-cols-[120px_1fr] items-center bg-[var(--bg-panel)] text-sm'
-                  >
-                    <div className='px-3 py-2 text-[var(--text-secondary)]'>{label}</div>
-                    <div className='border-l border-[var(--border-strong)] bg-[var(--bg-input)] px-2 py-1.5 text-[var(--text-dark)]'>
-                      {value}
+              <div className='space-y-3'>
+                <PropertyTable rows={parameterRows} />
+                {activeTab === 'simulation' && interfaceRows.length ? (
+                  <div className='space-y-2'>
+                    <div className='text-xs font-semibold uppercase tracking-wide text-[var(--text-secondary)]'>
+                      Interface Coordinates
                     </div>
+                    <PropertyTable rows={interfaceRows} />
                   </div>
-                ))}
+                ) : null}
               </div>
             )}
           </div>
@@ -122,5 +135,27 @@ export function PropertiesPanel() {
         </div>
       )}
     </aside>
+  );
+}
+
+function PropertyTable({
+  rows,
+}: {
+  rows: readonly (readonly [string, string])[];
+}) {
+  return (
+    <div className='space-y-px border border-[var(--border-strong)] bg-[var(--border-strong)]'>
+      {rows.map(([label, value]) => (
+        <div
+          key={label}
+          className='grid grid-cols-[120px_1fr] items-center bg-[var(--bg-panel)] text-sm'
+        >
+          <div className='px-3 py-2 text-[var(--text-secondary)]'>{label}</div>
+          <div className='border-l border-[var(--border-strong)] bg-[var(--bg-input)] px-2 py-1.5 text-[var(--text-dark)]'>
+            {value}
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }

@@ -5,7 +5,7 @@ import { TransformControls } from '@react-three/drei';
 import { Group } from 'three';
 import { ModelAsset } from '@/components/viewport/ModelAsset';
 import { toRadians, transformFromObject } from '@/components/viewport/modelUtils';
-import type { SceneDevice } from '@/types/scene';
+import type { InterfaceBounds, SceneDevice } from '@/types/scene';
 
 type OrbitControlsHandle = {
   enabled: boolean;
@@ -21,6 +21,14 @@ type ModelInstanceProps = {
     deviceId: string,
     transform: SceneDevice['transform'],
   ) => void;
+  onAnchorsChange: (
+    deviceId: string,
+    anchors: Record<string, { x: number; y: number; z: number }> | null,
+  ) => void;
+  onBoundsChange: (
+    deviceId: string,
+    bounds: InterfaceBounds | null,
+  ) => void;
   controlsRef: React.RefObject<OrbitControlsHandle | null>;
   transformMode: 'translate' | 'rotate' | 'scale';
 };
@@ -30,6 +38,8 @@ export function ModelInstance({
   isSelected,
   onSelect,
   onTransformCommit,
+  onAnchorsChange,
+  onBoundsChange,
   controlsRef,
   transformMode,
 }: ModelInstanceProps) {
@@ -52,6 +62,8 @@ export function ModelInstance({
         <ModelAsset
           device={device}
           isSelected={isSelected}
+          onAnchorsChange={onAnchorsChange}
+          onBoundsChange={onBoundsChange}
           onSelect={onSelect}
         />
       </group>

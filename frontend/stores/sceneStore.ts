@@ -4,7 +4,9 @@ import { produce } from 'immer';
 import { create } from 'zustand';
 import type { CatalogDevice } from '@/types/catalog';
 import type {
+  InterfaceAnchorMap,
   DeviceInterfaceConfig,
+  InterfaceBounds,
   InterfaceConnection,
   SceneDevice,
 } from '@/types/scene';
@@ -22,6 +24,14 @@ type SceneState = {
   updateDeviceTransform: (
     deviceId: string,
     transform: SceneDevice['transform'],
+  ) => void;
+  updateDeviceBounds: (
+    deviceId: string,
+    bounds: InterfaceBounds | null,
+  ) => void;
+  updateDeviceAnchors: (
+    deviceId: string,
+    anchors: InterfaceAnchorMap | null,
   ) => void;
   updateInterfaceConnection: (
     sourceDeviceId: string,
@@ -52,6 +62,8 @@ function createSceneFromCatalogItem(
     interfaceUrl: device.interfaceUrl,
     interfaceConfig: interfaceConfig ?? null,
     preserveSceneCoordinates,
+    modelBounds: null,
+    modelAnchors: null,
     source: device.kind,
     transform: {
       position: [0, 0, 0],
@@ -94,6 +106,38 @@ export const useSceneStore = create<SceneState>((set) => ({
         }
 
         device.transform = transform;
+      }),
+    ),
+  updateDeviceBounds: (deviceId, bounds) =>
+    set((state) =>
+      produce(state, (draft) => {
+        const device = draft.devices.find((item) => item.id === deviceId);
+
+        if (!device) {
+          return;
+        }
+
+        if (isSameJson(device.modelBounds, bounds)) {
+          return;
+        }
+
+        device.modelBounds = bounds;
+      }),
+    ),
+  updateDeviceAnchors: (deviceId, anchors) =>
+    set((state) =>
+      produce(state, (draft) => {
+        const device = draft.devices.find((item) => item.id === deviceId);
+
+        if (!device) {
+          return;
+        }
+
+        if (isSameJson(device.modelAnchors, anchors)) {
+          return;
+        }
+
+        device.modelAnchors = anchors;
       }),
     ),
   updateInterfaceConnection: (
@@ -168,4 +212,8 @@ async function loadDeviceInterfaceConfig(
   }
 
   return (await response.json()) as DeviceInterfaceConfig;
+}
+
+function isSameJson(left: unknown, right: unknown) {
+  return JSON.stringify(left) === JSON.stringify(right);
 }

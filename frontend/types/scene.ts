@@ -4,6 +4,13 @@ export type SceneSource = 'component' | 'layout' | 'mock';
 
 export type TransformTuple = [number, number, number];
 
+export type InterfaceBounds = {
+  min: { x: number; y: number; z: number };
+  max: { x: number; y: number; z: number };
+};
+
+export type InterfaceAnchorMap = Record<string, { x: number; y: number; z: number }>;
+
 export type DeviceTransform = {
   position: TransformTuple;
   rotation: TransformTuple;
@@ -19,6 +26,8 @@ export type SceneDevice = {
   interfaceUrl?: string;
   interfaceConfig?: DeviceInterfaceConfig | null;
   preserveSceneCoordinates?: boolean;
+  modelBounds?: InterfaceBounds | null;
+  modelAnchors?: InterfaceAnchorMap | null;
   source: SceneSource;
   transform: DeviceTransform;
 };

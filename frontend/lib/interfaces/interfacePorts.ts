@@ -3,6 +3,7 @@ import type {
   InterfacePoint,
   SceneDevice,
 } from '@/types/scene';
+import { getInterfaceCoordinate } from '@/lib/interfaces/interfaceCoordinates';
 
 export const FLOW_INPUT_INTERFACE = 'flow_input';
 export const FLOW_OUTPUT_INTERFACE = 'flow_output';
@@ -10,15 +11,15 @@ export const FLOW_OUTPUT_INTERFACE = 'flow_output';
 const FLOW_POINTS: InterfacePoint[] = [
   {
     name: FLOW_INPUT_INTERFACE,
-    displayName: '输入',
+    displayName: 'Input',
     direction: 'in',
-    description: '工艺流程的输入口。',
+    description: 'Process-flow input port.',
   },
   {
     name: FLOW_OUTPUT_INTERFACE,
-    displayName: '输出',
+    displayName: 'Output',
     direction: 'out',
-    description: '工艺流程的输出口。',
+    description: 'Process-flow output port.',
   },
 ];
 
@@ -39,11 +40,11 @@ export function isFlowInterfaceName(interfaceName: string) {
 
 export function formatInterfaceName(device: SceneDevice, interfaceName: string) {
   if (interfaceName === FLOW_INPUT_INTERFACE) {
-    return '输入';
+    return 'Input';
   }
 
   if (interfaceName === FLOW_OUTPUT_INTERFACE) {
-    return '输出';
+    return 'Output';
   }
 
   return resolveInterfacePoint(device, interfaceName)?.displayName ?? interfaceName;
@@ -52,7 +53,11 @@ export function formatInterfaceName(device: SceneDevice, interfaceName: string) 
 export function getDeviceInterfaces(device: SceneDevice): InterfacePoint[] {
   const config = device.interfaceConfig;
   if (!config) return [];
-  if (config.interfaces?.length) return config.interfaces;
+
+  if (config.interfaces?.length) {
+    return config.interfaces.map((point) => enrichInterfacePoint(device, point));
+  }
+
   const robotPoint = buildRobotToolPoint(config);
   return robotPoint ? [robotPoint] : [];
 }
@@ -118,6 +123,9 @@ function buildRobotToolPoint(config?: DeviceInterfaceConfig | null) {
   const jointName = config.interface?.jointName
     ?? config.urdf?.interfaceJointName
     ?? config.urdf?.joints.at(-1)?.name;
+  const nodeName = jointName
+    ? config.urdf?.joints.find((joint) => joint.name === jointName)?.nodeName
+    : undefined;
 
   if (!jointName) {
     return undefined;
@@ -125,8 +133,24 @@ function buildRobotToolPoint(config?: DeviceInterfaceConfig | null) {
 
   return {
     name: config.interface?.name ?? jointName,
-    displayName: config.interface?.name ?? '抓取点',
-    source: jointName,
-    description: config.interface?.description ?? '机械臂末端抓取点。',
+    displayName: config.interface?.name ?? 'Tool Point',
+    source: nodeName ?? jointName,
+    description: config.interface?.description ?? 'Robot end-effector point.',
+  };
+}
+
+function enrichInterfacePoint(device: SceneDevice, point: InterfacePoint): InterfacePoint {
+  if (point.origin || !point.source) {
+    return point;
+  }
+
+  const localCoordinate = getInterfaceCoordinate(device, point, 'Local');
+  if (!localCoordinate) {
+    return point;
+  }
+
+  return {
+    ...point,
+    origin: localCoordinate,
   };
 }

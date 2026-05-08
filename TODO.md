@@ -14,6 +14,22 @@
 
 ## 当前阶段任务清单
 
+- `done` `FE-ANCHOR-LOOP-069` `P0` `M2`
+  修复机械臂锚点自动提取引入的状态回写循环，避免视口渲染阶段重复 setState 导致 Maximum update depth exceeded。
+  Acceptance Criteria: 页面不再出现 Maximum update depth exceeded；机械臂锚点仍能正常提取；`pnpm run lint` 与 `tsc --noEmit` 通过，或明确记录阻塞原因。
+
+- `done` `FE-ROBOT-ANCHOR-068` `P0` `M2`
+  为机械臂接口补齐基于模型节点的局部锚点解析能力，使 Simulation 面板中的 Tool Point 能显示实时坐标而不再是 Unavailable。
+  Acceptance Criteria: 机械臂 Tool Point 能显示坐标；坐标随设备位移/旋转/缩放实时变化；`pnpm run lint` 与 `tsc --noEmit` 通过，或明确记录阻塞原因。
+
+- `done` `FE-SIM-INTERFACE-067` `P0` `M2`
+  精简 Properties 的 Simulation 页签，仅保留设备接口坐标展示，移除其余静态仿真字段。
+  Acceptance Criteria: Simulation 页签只显示当前设备接口坐标；不再显示 StartOffset/EndOffset 等静态项；`pnpm run lint` 与 `tsc --noEmit` 通过，或明确记录阻塞原因。
+
+- `done` `FE-INTERFACE-COORDS-066` `P0` `M2`
+  在 Simulation 面板中显示设备当前接口坐标，并修正接口世界坐标计算逻辑，使其基于设备实时位移、旋转、缩放以及模型原始包围盒动态更新。
+  Acceptance Criteria: Simulation 页签可显示当前选中设备的接口坐标；接口世界坐标随设备变换实时变化；workpiece 可基于原始包围盒推导 top/bottom 接口；`pnpm run lint` 与 `tsc --noEmit` 通过，或明确记录阻塞原因。
+
 - `done` `FE-VIEWPORT-LOOK-065` `P0` `M2`
   将当前前端视口的场景背景、光照与环境贴图调整为接近 animation 平台的渲染方式，提升模型贴图与整体观感一致性。
   Acceptance Criteria: 视口使用接近 animation 的白色背景与环境光配置；模型材质表现更接近 animation 平台；`pnpm run lint` 与 `tsc --noEmit` 通过，或明确记录阻塞原因。

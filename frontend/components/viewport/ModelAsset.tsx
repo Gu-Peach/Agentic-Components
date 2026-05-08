@@ -1,14 +1,19 @@
 'use client';
 
-import { Suspense, useMemo } from 'react';
+import { Suspense, useEffect, useMemo } from 'react';
 import { useGLTF } from '@react-three/drei';
-import { Object3D } from 'three';
-import type { SceneDevice } from '@/types/scene';
+import { Box3, Object3D, Vector3 } from 'three';
+import type { InterfaceBounds, SceneDevice } from '@/types/scene';
 
 type ModelAssetProps = {
   device: SceneDevice;
   isSelected: boolean;
   onSelect: (deviceId: string) => void;
+  onAnchorsChange?: (
+    deviceId: string,
+    anchors: Record<string, { x: number; y: number; z: number }> | null,
+  ) => void;
+  onBoundsChange?: (deviceId: string, bounds: InterfaceBounds | null) => void;
 };
 
 type ThreeObject3D = InstanceType<typeof Object3D>;
@@ -44,7 +49,13 @@ export function ModelFallback({
   );
 }
 
-function GLTFAsset({ device, isSelected, onSelect }: ModelAssetProps) {
+function GLTFAsset({
+  device,
+  onAnchorsChange,
+  isSelected,
+  onBoundsChange,
+  onSelect,
+}: ModelAssetProps) {
   const gltf = useGLTF(device.modelUrl ?? '');
   const scene = useMemo(() => {
     const clone = gltf.scene.clone(true);
@@ -52,6 +63,19 @@ function GLTFAsset({ device, isSelected, onSelect }: ModelAssetProps) {
     enableModelShadows(clone);
     return clone;
   }, [device.name, gltf.scene]);
+  const bounds = useMemo(() => measureModelBounds(scene), [scene]);
+  const anchors = useMemo(
+    () => measureModelAnchors(scene, device.interfaceConfig),
+    [device.interfaceConfig, scene],
+  );
+
+  useEffect(() => {
+    onBoundsChange?.(device.id, bounds);
+  }, [bounds, device.id, onBoundsChange]);
+
+  useEffect(() => {
+    onAnchorsChange?.(device.id, anchors);
+  }, [anchors, device.id, onAnchorsChange]);
 
   return (
     <>
@@ -59,6 +83,77 @@ function GLTFAsset({ device, isSelected, onSelect }: ModelAssetProps) {
       {isSelected ? <SelectionRing /> : null}
     </>
   );
+}
+
+function measureModelBounds(root: ThreeObject3D): InterfaceBounds | null {
+  const bounds = new Box3().setFromObject(root);
+  if (bounds.isEmpty()) {
+    return null;
+  }
+
+  return {
+    min: vectorPoint(bounds.min),
+    max: vectorPoint(bounds.max),
+  };
+}
+
+function measureModelAnchors(
+  root: ThreeObject3D,
+  interfaceConfig: SceneDevice['interfaceConfig'],
+): Record<string, { x: number; y: number; z: number }> | null {
+  const anchorNames = collectAnchorNames(interfaceConfig);
+
+  if (!anchorNames.length) {
+    return null;
+  }
+
+  root.updateWorldMatrix(true, true);
+
+  const anchors = Object.fromEntries(
+    anchorNames.flatMap((name) => {
+      const target = root.getObjectByName(name);
+      if (!target) {
+        return [];
+      }
+
+      const local = root.worldToLocal(target.getWorldPosition(new Vector3()).clone());
+      return [[name, vectorPoint(local)]];
+    }),
+  );
+
+  return Object.keys(anchors).length ? anchors : null;
+}
+
+function collectAnchorNames(interfaceConfig: SceneDevice['interfaceConfig']) {
+  if (!interfaceConfig) {
+    return [];
+  }
+
+  const interfaceSources = (interfaceConfig.interfaces ?? [])
+    .map((point) => point.source)
+    .filter((source): source is string =>
+      Boolean(
+        source
+        && source !== 'bounding_box_bottom_center'
+        && source !== 'bounding_box_top_center',
+      ),
+    );
+  const toolJointName = interfaceConfig.interface?.jointName
+    ?? interfaceConfig.urdf?.interfaceJointName
+    ?? interfaceConfig.urdf?.joints.at(-1)?.name;
+  const toolNodeName = toolJointName
+    ? interfaceConfig.urdf?.joints.find((joint) => joint.name === toolJointName)?.nodeName
+    : undefined;
+
+  return [...new Set([...interfaceSources, ...(toolNodeName ? [toolNodeName] : [])])];
+}
+
+function vectorPoint(vector: InstanceType<typeof Vector3>) {
+  return {
+    x: Number(vector.x.toFixed(3)),
+    y: Number(vector.y.toFixed(3)),
+    z: Number(vector.z.toFixed(3)),
+  };
 }
 
 function enableModelShadows(root: ThreeObject3D) {

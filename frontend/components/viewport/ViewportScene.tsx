@@ -19,6 +19,8 @@ export function ViewportScene({
     devices,
     selectedDeviceId,
     selectDevice,
+    updateDeviceAnchors,
+    updateDeviceBounds,
     updateDeviceTransform,
   } = useSceneStore();
   const controlsRef = useRef<OrbitControlsHandle | null>(null);
@@ -46,6 +48,8 @@ export function ViewportScene({
           key={device.id}
           device={device}
           isSelected={device.id === selectedDeviceId}
+          onAnchorsChange={updateDeviceAnchors}
+          onBoundsChange={updateDeviceBounds}
           onSelect={selectDevice}
           onTransformCommit={updateDeviceTransform}
           controlsRef={controlsRef}

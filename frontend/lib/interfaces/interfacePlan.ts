@@ -3,6 +3,7 @@ import type {
   InterfaceConnection,
   SceneDevice,
 } from '@/types/scene';
+import { getInterfaceCoordinate } from '@/lib/interfaces/interfaceCoordinates';
 import { getDeviceInterfaces, resolveInterfacePoint } from '@/lib/interfaces/interfacePorts';
 
 const DEFAULT_SEGMENT_DURATION = 3;
@@ -104,12 +105,7 @@ function toWorldPoint(
   device: SceneDevice,
   point: ReturnType<typeof resolveInterfacePoint>,
 ): VectorPoint | null {
-  if (!point?.origin) return null;
-  return {
-    x: point.origin.x + device.transform.position[0],
-    y: point.origin.y + device.transform.position[1],
-    z: point.origin.z + device.transform.position[2],
-  };
+  return point ? getInterfaceCoordinate(device, point, 'World') : null;
 }
 
 function fallbackPoint(device: SceneDevice): VectorPoint {

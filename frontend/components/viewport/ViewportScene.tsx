@@ -40,7 +40,12 @@ export function ViewportScene({
         sectionColor='#b8b8b8'
         sectionSize={5}
       />
-      <mesh position={[0, -0.02, 0]} receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh
+        position={[0, -0.02, 0]}
+        receiveShadow
+        rotation={[-Math.PI / 2, 0, 0]}
+        onClick={() => selectDevice('')}
+      >
         <planeGeometry args={[60, 60]} />
         <meshStandardMaterial color='#ffffff' />
       </mesh>

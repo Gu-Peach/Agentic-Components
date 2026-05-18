@@ -68,6 +68,15 @@ async def observe_agent_step(
 
 
 async def _event_stream(result: dict[str, Any]) -> AsyncIterator[str]:
+    if result.get('composition_result'):
+        payload = result['composition_result']
+        if payload.get('status') == 'clarification_required':
+            yield _chunk('clarification_required', payload)
+        yield _chunk('process_composition_result', payload)
+        yield _chunk('final_response', {'content': result['final_response']})
+        yield 'data: [DONE]\n\n'
+        return
+
     if result.get('status') == 'clarification_required':
         yield _chunk('clarification_required', result['clarification_result'])
         yield _chunk('final_response', {'content': result['final_response']})
@@ -96,6 +105,8 @@ def _run_pipeline(request: AgentRunRequest) -> dict[str, Any]:
     return pipeline.run(
         session_id=request.session_id,
         message=request.message,
+        messages=request.messages,
         scene_name=request.scene_name,
         scene_skill_path=request.scene_skill_path,
+        scene_layout=request.scene_layout,
     )

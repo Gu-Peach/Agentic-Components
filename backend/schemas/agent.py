@@ -19,6 +19,11 @@ class AgentRunRequest(BaseModel):
         default='default',
         validation_alias=AliasChoices('session_id', 'sessionId'),
     )
+    scene_layout: dict[str, Any] | None = Field(
+        default=None,
+        validation_alias=AliasChoices('scene_layout', 'sceneLayout'),
+    )
+    messages: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class AgentRunResponse(BaseModel):
@@ -32,6 +37,7 @@ class AgentRunResponse(BaseModel):
     world_state: dict[str, Any] = Field(default_factory=dict)
     validation_result: dict[str, Any] = Field(default_factory=dict)
     clarification_result: dict[str, Any] = Field(default_factory=dict)
+    composition_result: dict[str, Any] = Field(default_factory=dict)
     execution_plan: dict[str, Any]
     observations: list[dict[str, Any]] = Field(default_factory=list)
     result_events: list[dict[str, Any]]

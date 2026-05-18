@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Lock, MapPin, Tag } from 'lucide-react';
+import { Lock, MapPin, Tag, Trash2 } from 'lucide-react';
 import { useSceneStore } from '@/stores/sceneStore';
 import { InterfacePanel } from '@/components/properties/InterfacePanel';
 import { defaultFields } from '@/components/properties/propertyFields';
@@ -19,12 +19,11 @@ type PropertiesTab = (typeof tabs)[number];
 type InterfaceRow = { label: string; value: string; interfaceName: string };
 
 export function PropertiesPanel() {
-  const { devices, selectedDeviceId } = useSceneStore();
+  const { devices, selectedDeviceId, removeDevice } = useSceneStore();
   const { activeHighlight, toggleHighlight } = useInterfaceHighlightStore();
   const [activeTab, setActiveTab] = useState<PropertiesTab>('default');
   const [coordinateMode, setCoordinateMode] = useState<InterfaceCoordinateMode>('World');
-  const selected =
-    devices.find((device) => device.id === selectedDeviceId) ?? devices[0];
+  const selected = devices.find((device) => device.id === selectedDeviceId);
 
   const parameterRows = useMemo(() => {
     if (!selected) {
@@ -64,7 +63,15 @@ export function PropertiesPanel() {
           <div className='border-b border-[var(--border-soft)] px-3 py-3'>
             <div className='mb-3 flex items-center gap-2 text-sm text-[var(--text-accent)]'>
               <MapPin size={14} />
-              <span>{selected.name}</span>
+              <span className='flex-1'>{selected.name}</span>
+              <button
+                className='flex h-8 items-center gap-1 border border-[var(--border-strong)] px-2 text-xs text-[var(--text-secondary)] transition hover:text-[var(--text-primary)]'
+                onClick={() => removeDevice(selected.id)}
+                type='button'
+              >
+                <Trash2 size={13} />
+                Delete
+              </button>
             </div>
             <div className='mb-3 flex flex-wrap gap-3 text-xs text-[var(--text-secondary)]'>
               {coordinateModes.map((mode) => (
@@ -144,7 +151,9 @@ export function PropertiesPanel() {
         </>
       ) : (
         <div className='flex flex-1 items-center justify-center px-6 text-center text-sm text-[var(--text-secondary)]'>
-          No devices in the scene yet. Load a model from the catalog first.
+          {devices.length
+            ? 'No model selected. Click a device in the viewport to edit it.'
+            : 'No devices in the scene yet. Load a model from the catalog first.'}
         </div>
       )}
     </aside>

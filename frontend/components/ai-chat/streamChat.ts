@@ -1,4 +1,5 @@
 import type { AgentMessage } from '@/types/agent';
+import type { SceneLayoutDocument } from '@/types/process';
 
 export type AgentStreamEvent = {
   type: string;
@@ -16,6 +17,7 @@ export type AgentStreamEvent = {
 type StreamChatParams = {
   messages: AgentMessage[];
   sceneName: string;
+  sceneLayout: SceneLayoutDocument;
   signal?: AbortSignal;
   onDelta: (delta: string) => void;
   onAgentEvent?: (event: AgentStreamEvent) => void;
@@ -24,6 +26,7 @@ type StreamChatParams = {
 export async function streamChat({
   messages,
   sceneName,
+  sceneLayout,
   signal,
   onDelta,
   onAgentEvent,
@@ -39,6 +42,11 @@ export async function streamChat({
       message: latestUserMessage?.content ?? '',
       sceneName,
       sessionId: 'workspace-default',
+      messages: messages.map((message) => ({
+        role: message.role,
+        content: message.content,
+      })),
+      sceneLayout,
     }),
     signal,
   });

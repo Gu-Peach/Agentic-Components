@@ -1,0 +1,141 @@
+{
+  "schemaVersion": "scene-layout/v1",
+  "metadata": {
+    "id": "process-test-001",
+    "name": "Conveyor Robot Transfer",
+    "description": "A reusable scene layout document for agent-driven process simulation.",
+    "createdAt": "2026-05-08T00:00:00.000Z",
+    "unit": "meter"
+  },
+  "layout": {
+    "sceneSource": "component",
+    "devices": [
+      {
+        "id": "conveyor_1",
+        "name": "Conveyor 1",
+        "type": "conveyor",
+        "catalogId": "Conveyor_aankws",
+        "modelUrl": "/models/assets/Conveyor/Conveyor_aankws.glb",
+        "interfaceUrl": "/models/assets/Conveyor/interfaces/Conveyor_aankws.json",
+        "transform": {
+          "position": [0, 0, 0],
+          "rotation": [0, 0, 0],
+          "scale": [1, 1, 1]
+        }
+      },
+      {
+        "id": "robot_1",
+        "name": "Robot UR10",
+        "type": "robot",
+        "catalogId": "robot_UR10",
+        "modelUrl": "/models/assets/Robot/robot_UR10.glb",
+        "interfaceUrl": "/models/assets/Robot/interfaces/robot_UR10.json",
+        "transform": {
+          "position": [1.6, 0, 0.4],
+          "rotation": [0, 0, 0],
+          "scale": [1, 1, 1]
+        }
+      },
+      {
+        "id": "conveyor_2",
+        "name": "Conveyor 2",
+        "type": "conveyor",
+        "catalogId": "Conveyor_aankws",
+        "modelUrl": "/models/assets/Conveyor/Conveyor_aankws.glb",
+        "interfaceUrl": "/models/assets/Conveyor/interfaces/Conveyor_aankws.json",
+        "transform": {
+          "position": [3.2, 0, 0],
+          "rotation": [0, 0, 0],
+          "scale": [1, 1, 1]
+        }
+      },
+      {
+        "id": "box_1",
+        "name": "Box 1",
+        "type": "workpiece",
+        "catalogId": "Box",
+        "modelUrl": "/models/assets/Workpiece/Box.glb",
+        "interfaceUrl": "/models/assets/Workpiece/interfaces/Box.json",
+        "transform": {
+          "position": [-0.699, 0.7, 0],
+          "rotation": [0, 0, 0],
+          "scale": [1, 1, 1]
+        }
+      }
+    ]
+  },
+  "processFlow": {
+    "description": "Manual process-flow links created in the Interface workspace.",
+    "connections": [
+      {
+        "id": "conveyor_1:flow_output",
+        "sourceDeviceId": "conveyor_1",
+        "sourceInterface": "flow_output",
+        "targetDeviceId": "robot_1",
+        "targetInterface": "flow_input"
+      },
+      {
+        "id": "robot_1:flow_output",
+        "sourceDeviceId": "robot_1",
+        "sourceInterface": "flow_output",
+        "targetDeviceId": "conveyor_2",
+        "targetInterface": "flow_input"
+      }
+    ]
+  },
+  "simulation": {
+    "workpieceDeviceId": "box_1",
+    "workpieceNodeName": "Box_00Ln",
+    "executionPolicy": {
+      "conveyorAlwaysRunsEntryToExit": true,
+      "robotPlaceHeight": 1,
+      "robotUsesRuntimeEndEffectorStart": true
+    },
+    "interfaceCoordinateMode": "world"
+  },
+  "compiledPlan": {
+    "description": "Optional snapshot generated from layout and processFlow. It can be regenerated.",
+    "segments": [
+      {
+        "id": "interface-flow-1",
+        "device_id": "conveyor_1",
+        "device_type": "conveyor",
+        "algorithm": "conveyor_linear",
+        "waypoints": [
+          { "x": -0.699, "y": 0.7, "z": 0 },
+          { "x": 0.701, "y": 0.7, "z": 0 }
+        ]
+      },
+      {
+        "id": "interface-flow-2",
+        "device_id": "robot_1",
+        "device_type": "robot",
+        "algorithm": "robot_arm_ik",
+        "waypoints": [
+          { "x": 0.701, "y": 1.7, "z": 0 },
+          { "x": 2.501, "y": 1.7, "z": 0 }
+        ],
+        "placementTarget": { "x": 2.501, "y": 0.7, "z": 0 }
+      },
+      {
+        "id": "interface-flow-terminal-3",
+        "device_id": "conveyor_2",
+        "device_type": "conveyor",
+        "algorithm": "conveyor_linear",
+        "waypoints": [
+          { "x": 2.501, "y": 0.7, "z": 0 },
+          { "x": 3.901, "y": 0.7, "z": 0 }
+        ]
+      }
+    ]
+  },
+  "validation": {
+    "expectedFlow": [
+      "conveyor_1 transfers workpiece from entry to exit",
+      "robot_1 moves its runtime end effector to the workpiece top interface",
+      "robot_1 carries the workpiece above conveyor_2 entry",
+      "box_1 bottom interface is placed on conveyor_2 entry",
+      "conveyor_2 transfers workpiece from entry to exit"
+    ]
+  }
+}

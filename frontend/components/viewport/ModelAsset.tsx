@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useMemo } from 'react';
+import type { ThreeEvent } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import { Box3, Object3D, Vector3 } from 'three';
 import type { InterfaceBounds, SceneDevice } from '@/types/scene';
@@ -41,8 +42,13 @@ export function ModelFallback({
           ? '#b7b7b7'
           : '#7a7a7a';
 
+  function handleSelect(event: ThreeEvent<MouseEvent>) {
+    event.stopPropagation();
+    onSelect(device.id);
+  }
+
   return (
-    <mesh onClick={() => onSelect(device.id)}>
+    <mesh onClick={handleSelect}>
       <boxGeometry args={device.type === 'conveyor' ? [4, 0.3, 1.2] : [1.5, 1.5, 1.5]} />
       <meshStandardMaterial color={color} emissive={isSelected ? '#4da3ff' : '#000000'} />
     </mesh>
@@ -77,9 +83,14 @@ function GLTFAsset({
     onAnchorsChange?.(device.id, anchors);
   }, [anchors, device.id, onAnchorsChange]);
 
+  function handleSelect(event: ThreeEvent<MouseEvent>) {
+    event.stopPropagation();
+    onSelect(device.id);
+  }
+
   return (
     <>
-      <primitive object={scene} onClick={() => onSelect(device.id)} />
+      <primitive object={scene} onClick={handleSelect} />
       {isSelected ? <SelectionRing /> : null}
     </>
   );

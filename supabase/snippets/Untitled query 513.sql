@@ -1,32 +1,22 @@
 create extension if not exists vector;
 
-create table if not exists public.drawings (
-  id text primary key,
-  name text,
-  category text,
-  material text,
-  summary text,
-  gear_parameters jsonb,
-  key_dimensions jsonb,
-  tolerances jsonb,
-  surface_roughness jsonb,
-  inspection_items jsonb,
-  technical_requirements jsonb,
-  raw jsonb,
-  embeding vector(768),
-  path text,
-  dataset text,
-  source text,
-  uploaded_at timestamptz not null default now()
-);
+alter table public.drawings
+rename column embeding to embedding;
 
-create index if not exists drawings_category_idx on public.drawings (category);
-create index if not exists drawings_material_idx on public.drawings (material);
-create index if not exists drawings_gear_parameters_gin_idx on public.drawings using gin (gear_parameters);
-create index if not exists drawings_key_dimensions_gin_idx on public.drawings using gin (key_dimensions);
+alter table public.drawings
+alter column gear_parameters set default '{}'::jsonb,
+alter column key_dimensions set default '{}'::jsonb,
+alter column tolerances set default '{}'::jsonb,
+alter column surface_roughness set default '[]'::jsonb,
+alter column inspection_items set default '{}'::jsonb,
+alter column technical_requirements set default '[]'::jsonb,
+alter column raw set default '{}'::jsonb;
 
--- Optional vector search index. Create it after data is loaded if you plan to query by similarity.
-create index if not exists drawings_embeding_ivfflat_idx
+create unique index if not exists drawings_path_uidx on public.drawings (path);
+
+drop index if exists drawings_embeding_ivfflat_idx;
+
+create index if not exists drawings_embedding_ivfflat_idx
   on public.drawings
-  using ivfflat (embeding vector_cosine_ops)
+  using ivfflat (embedding vector_cosine_ops)
   with (lists = 10);

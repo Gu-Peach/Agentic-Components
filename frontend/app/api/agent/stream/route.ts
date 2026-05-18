@@ -12,6 +12,8 @@ export async function POST(request: NextRequest) {
         message: body.message,
         session_id: body.sessionId ?? 'default',
         scene_name: body.sceneName ?? 'Coordinated Robotic Transfer Unit',
+        messages: body.messages ?? [],
+        scene_layout: body.sceneLayout ?? null,
       }),
     });
 

@@ -51,7 +51,11 @@ export function Viewport3D() {
 
       <SceneToolbar mode={transformMode} onChange={setTransformMode} />
 
-      <Canvas camera={{ position: [8, 6, 10], fov: 45 }} gl={{ alpha: false }}>
+      <Canvas
+        camera={{ position: [8, 6, 10], fov: 45 }}
+        gl={{ alpha: false }}
+        onPointerMissed={() => selectDevice('')}
+      >
         <ViewportScene transformMode={transformMode} />
       </Canvas>
 

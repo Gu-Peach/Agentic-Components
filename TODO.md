@@ -2,6 +2,54 @@
 
 ## 阶段目标
 
+- 当前阶段：Phase 1 - 双 Agent 仿真实现文档补充（M2）
+- 阶段周期：2026-05-11，1 天
+- 阶段目标：将当前流程规划 Agent 与执行 Agent 的实际实现方式写入 `docs/agent/simulation`，说明前后端代码落点、输入输出契约、SSE 事件和当前边界。
+- 验收标准：
+  - `docs/agent/simulation` 下新增当前实现说明文档
+  - 文档明确流程规划 Agent 和执行 Agent 的职责边界
+  - 文档引用当前后端 pipeline、composition、scheduling、execution、API 与前端聊天/仿真播放代码位置
+  - 文档说明两类输入：Scene Layout JSON 与 scene_skills
+  - 文档说明已实现能力、未完成能力与后续演进建议
+
+## 当前阶段任务清单
+
+- `done` `FE-VIEWPORT-DESELECT-086` `P0` `M2`
+  调整 3D 视口选中交互，仅在点击模型时显示模型坐标轴，点击地面或空白区域时清空选中并隐藏坐标轴。
+  Acceptance Criteria: 点击模型后显示对应 TransformControls；点击地面或空白区域后取消当前选中；右侧属性面板不再在空选状态下自动回退到第一个模型；前端 lint 和 typecheck 通过。
+- `done` `FE-SCENE-DELETE-085` `P0` `M2`
+  为场景工作区增加删除已加载模型的能力，支持删除当前选中设备，并同步清理相关流程连接与选中状态。
+  Acceptance Criteria: 选中设备后可执行删除；删除后对应模型从视口和列表消失；关联的 `processFlow/interfaceConnections` 一并移除；删除后选中状态自动更新；前端 lint 和 typecheck 通过。
+- `done` `DOC-SIM-AGENT-084` `P0` `M2`
+  编写当前双 Agent 仿真实现说明文档，聚焦流程规划 Agent 与执行 Agent 的真实代码链路和数据契约。
+  Acceptance Criteria: 文档已创建；覆盖流程规划、仿真执行、前端交互、SSE 输出、状态字段与后续优化建议；无需改动运行时代码。
+
+## 阶段目标
+
+- 当前阶段：Phase 1 - 工艺流程编排 Agent 落地实现（M2）
+- 阶段周期：2026-05-09 起
+- 阶段目标：将工艺流程编排 Agent 从设计文档落实为可在当前场景中直接工作的真实能力，支持读取场景布局、生成工艺流程提案、向用户追问关键信息、接受用户修订并将结果回写到前端流程连接。
+- 验收标准：
+  - Agent 可基于当前场景 `Scene Layout JSON` 生成可审阅的工艺流程提案
+  - 当起始设备、流转方向或流程意图不明确时，Agent 会先追问再规划
+  - 用户可在提案后继续要求修改，Agent 会基于当前流程重新编排
+  - 审批后的流程连接可回写到 Interface 画布
+  - 前后端 lint / typecheck / 基础语法检查通过，或明确记录阻塞原因
+
+## 当前阶段任务清单
+
+- `done` `DOC-PROCESS-AGENT-083` `P0` `M2`
+  编写工艺流程编排 Agent 的实现说明文档，基于当前已落地代码解释规范设计、身份定义层、感知层、规划层、工具层、行动层以及感知→决策→行动→反馈闭环如何在系统中实现。
+  Acceptance Criteria: 文档明确引用当前前后端实现位置；解释 Scene Layout JSON 与流程层接口规范如何约束 Agent；说明 Profile、Perception、Planning、Tool Use、Action、Feedback 的代码落点；描述前端追问/提案/回写闭环与后端编排管线如何协同。
+- `done` `BE-LOCAL-DB-BYPASS-082` `P0` `M2`
+  调整后端本地开发启动策略，临时关闭数据库初始化依赖，使场景与工艺流程编排 Agent 可在未启动 Supabase/PostgreSQL 的情况下直接联调。
+  Acceptance Criteria: 后端启动时不再强制连接本地数据库；当前 `.env` 默认为关闭数据库自动初始化；保留后续恢复数据库联调的配置入口；基础语法检查通过。
+- `done` `AGENT-PROCESS-081` `P0` `M2`
+  落地工艺流程编排 Agent：补齐后端编排分支、场景布局输入、追问/提案/修订闭环以及前端提案审阅与流程回写能力，并完成必要的类型与语法校验。
+  Acceptance Criteria: 用户可在聊天区直接发起工艺流程编排请求；Agent 能根据当前场景返回 clarification 或 proposal；审批后流程连接写回 scene store；修订请求可再次进入编排；前端 lint/typecheck 与后端基础语法检查通过，或明确记录阻塞原因。
+
+## 阶段目标
+
 - 当前阶段：Phase 1 - Interface 画布式工艺建模器（M2）
 - 阶段周期：2026-05-08，1 天
 - 阶段目标：将 Interface 页签调整为类似知识图谱/工艺流程图的编辑画布，设备以紧凑小面板展示，接口以小方框呈现，并支持放大整个 Interface 工作区进行连接编辑。
@@ -14,6 +62,21 @@
 
 ## 当前阶段任务清单
 
+- `done` `DOC-PROCESS-AGENT-080` `P0` `M2`
+  细化工艺流程编排 Agent 的用户交互闭环，补充规划前信息获取和规划后结果修改两类人机交互机制，并同步到 Planning、Action、Memory 章节。
+  Acceptance Criteria: 文档明确规划前可询问起点、终点、流转方向和优先设备；明确规划后支持用户基于结果继续修改；说明修改反馈如何进入记忆与重规划；输出结构包含提案、确认和修订状态。
+- `done` `DOC-PROCESS-AGENT-079` `P0` `M2`
+  按完整 LLM Agent 架构重构工艺流程编排 Agent 设计文档，覆盖 Profile、Memory、Planning、Tool Use、Perception、Action、Schema/Ontology 与反馈闭环。
+  Acceptance Criteria: 文档以完整 Agent 架构组织；保留本项目编排 Agent 的职责边界；明确感知、校验、规划、工具、行动、记忆与人工追问机制；输出仍对齐 Scene Layout JSON。
+- `done` `DOC-PROCESS-AGENT-078` `P0` `M2`
+  根据新的职责边界修订工艺流程编排 Agent 方案，收紧其输入为设备基础信息和流程输入输出口，移除执行层接口获取设定，并将实现路线调整为面向完整 Agent 的落地方案。
+  Acceptance Criteria: 文档不再要求编排 Agent 获取真实设备接口细节；明确编排 Agent 只操作流程层输入输出口；移除“MVP 优先”表述并改为完整实现方案；文档结构保持清晰可继续评审。
+- `done` `DOC-PROCESS-AGENT-077` `P0` `M2`
+  编写工艺流程编排 Agent 的技术方案初稿，明确双 Agent 架构下的职责边界、输入上下文、工具接口、人工澄清条件与输出 JSON 结构，为后续实现自动编排入口做准备。
+  Acceptance Criteria: `docs/process` 下存在可阅读的 Agent 方案文档；文档说明 Agent 1 与 Agent 2 的边界；明确哪些信息由工具提供、哪些需要人工确认；给出流程输出格式与最小实现路线。
+- `done` `DOC-PROCESS-SCENE-076` `P0` `M2`
+  固化工艺流程场景输出协议，在 `frontend/public/process_test` 提供 JSON 模板，并在 `docs/process` 编写输出内容、字段作用与 agent/仿真使用方式说明。
+  Acceptance Criteria: 存在可读的 Scene Layout JSON 模板；文档说明 layout、processFlow、simulation、compiledPlan 的职责边界；说明该 JSON 如何服务 agent 理解、仿真执行与实验验证；模板与文档路径清晰可引用。
 - `done` `FE-IK-BEHAVIOR-PARITY-075` `P0` `M2`
   对齐 behavior 中已验证的机械臂 IK 执行语义：计划只提供业务轨迹点，运行时读取真实末端位置并补入轨迹前缀；同时确保场景中出现传送带动作时始终执行完整 entry -> exit 传送。
   Acceptance Criteria: robot 段计划轨迹为物料当前顶部接口点到下游入口上方；运行时使用真实 end effector 当前位置作为 IK 起点；物块仅在到达顶部接口点后绑定；无连接的单传送带场景也能播放 entry -> exit；`pnpm run lint` 与 `tsc --noEmit` 通过，或明确记录阻塞原因。

@@ -3,9 +3,15 @@
 import { produce } from 'immer';
 import { create } from 'zustand';
 import type { CatalogDevice } from '@/types/catalog';
+import {
+  createSceneFromCatalogItem,
+  filterConnectionsByDevice,
+  isSameJson,
+  loadDeviceInterfaceConfig,
+  nextSelectionAfterRemoval,
+} from '@/stores/sceneStore.helpers';
 import type {
   InterfaceAnchorMap,
-  DeviceInterfaceConfig,
   InterfaceBounds,
   InterfaceConnection,
   SceneDevice,
@@ -39,47 +45,14 @@ type SceneState = {
     targetDeviceId: string,
     targetInterface: string,
   ) => void;
+  removeDevice: (deviceId: string) => void;
+  replaceInterfaceConnections: (connections: InterfaceConnection[]) => void;
   loadCatalogItem: (device: CatalogDevice) => Promise<void>;
 };
 
 const mockDevices: SceneDevice[] = [];
 
 const initialSelectedId = mockDevices[0]?.id ?? '';
-
-function createSceneFromCatalogItem(
-  device: CatalogDevice,
-  index = 0,
-  interfaceConfig?: DeviceInterfaceConfig | null,
-): SceneDevice {
-  const preserveSceneCoordinates = shouldPreserveSceneCoordinates(device);
-
-  return {
-    id: `${device.id}-instance-${index}`,
-    name: `${device.name} ${index + 1}`,
-    type: device.deviceType,
-    catalogId: device.id,
-    modelUrl: device.modelUrl,
-    interfaceUrl: device.interfaceUrl,
-    interfaceConfig: interfaceConfig ?? null,
-    preserveSceneCoordinates,
-    modelBounds: null,
-    modelAnchors: null,
-    source: device.kind,
-    transform: {
-      position: [0, 0, 0],
-      rotation: [0, 0, 0],
-      scale: [1, 1, 1],
-    },
-  };
-}
-
-function shouldPreserveSceneCoordinates(device: CatalogDevice) {
-  return (
-    device.kind === 'layout'
-    || device.name === 'Coordinated Robotic Transfer Unit'
-    || device.name === 'Intelligent Storage and Logistics Line'
-  );
-}
 
 export const useSceneStore = create<SceneState>((set) => ({
   devices: mockDevices,
@@ -173,6 +146,38 @@ export const useSceneStore = create<SceneState>((set) => ({
         }
       }),
     ),
+  removeDevice: (deviceId) =>
+    set((state) =>
+      produce(state, (draft) => {
+        const device = draft.devices.find((item) => item.id === deviceId);
+
+        if (!device) {
+          return;
+        }
+
+        draft.devices = draft.devices.filter((item) => item.id !== deviceId);
+        draft.interfaceConnections = filterConnectionsByDevice(
+          draft.interfaceConnections,
+          deviceId,
+        );
+        draft.selectedDeviceId = nextSelectionAfterRemoval(
+          draft.devices,
+          deviceId,
+          draft.selectedDeviceId,
+        );
+        if (!draft.devices.length) {
+          draft.sceneLabel = '焊接单元';
+          draft.sceneSource = 'mock';
+          draft.agentSceneName = 'Coordinated Robotic Transfer Unit';
+        }
+      }),
+    ),
+  replaceInterfaceConnections: (connections) =>
+    set((state) =>
+      produce(state, (draft) => {
+        draft.interfaceConnections = [...connections];
+      }),
+    ),
   loadCatalogItem: async (device) => {
     set({ isSceneLoading: true, loadError: null });
 
@@ -197,23 +202,3 @@ export const useSceneStore = create<SceneState>((set) => ({
     }
   },
 }));
-
-async function loadDeviceInterfaceConfig(
-  interfaceUrl: string | undefined,
-): Promise<DeviceInterfaceConfig | null> {
-  if (!interfaceUrl) {
-    return null;
-  }
-
-  const response = await fetch(interfaceUrl, { cache: 'no-store' });
-
-  if (!response.ok) {
-    throw new Error(`接口配置加载失败：${interfaceUrl}`);
-  }
-
-  return (await response.json()) as DeviceInterfaceConfig;
-}
-
-function isSameJson(left: unknown, right: unknown) {
-  return JSON.stringify(left) === JSON.stringify(right);
-}
